@@ -1,19 +1,20 @@
-import { createClient } from "@/lib/supabase/server";
+import { AuthTabs } from "@/features/auth/ui/AuthTabs";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const { error } = await supabase.from("profiles").select("id").limit(1);
-
-  const connected = !error || error.code === "42501"; // 42501 = permission denied, preuve que la connexion marche
-
+export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
-      <h1 className="font-heading text-4xl">LDN·IA</h1>
-      <p className="font-mono text-sm text-muted-foreground">
-        {connected
-          ? "Connexion Supabase OK (accès à profiles bien refusé pour un visiteur non connecté, comme attendu)"
-          : `Erreur inattendue : ${error?.message}`}
-      </p>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-10 bg-background px-4 py-16 text-foreground">
+      {/* Vitrine : présentation rapide de l'outil, visible même sans compte */}
+      <div className="flex max-w-md flex-col items-center gap-3 text-center">
+        <h1 className="font-heading text-4xl">LDN·AI</h1>
+        <p className="font-sans text-muted-foreground">
+          Pose tes questions sur ton jeux, sans spoil, avec les noms officiels en français.
+        </p>
+      </div>
+
+      {/* Zone de connexion/inscription */}
+      <div className="w-full max-w-sm">
+        <AuthTabs />
+      </div>
     </main>
   );
 }
