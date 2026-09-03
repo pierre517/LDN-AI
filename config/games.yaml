@@ -1,0 +1,7 @@
+games:
+  - id: elden-ring
+    rawg_id: 326243
+    nom: "Elden Ring"
+    plateformes: [PS5, PS4, Xbox Series, Xbox One, PC]
+    sources: [fextralife.com/eldenring, reddit.com/r/Eldenring, gamefaqs.gamespot.com/eldenring]
+    statut: actif
