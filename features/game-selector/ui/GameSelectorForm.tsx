@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -9,12 +10,21 @@ import type { GameWithDetails } from "@/features/game-selector/domain/types";
 type Props = { games: GameWithDetails[] };
 
 export function GameSelectorForm({ games }: Props) {
+  const router = useRouter();
+
   // Un seul jeu sélectionnable à la fois -> le premier actif par défaut
   const [selectedGameId, setSelectedGameId] = useState(games[0]?.id);
   const selectedGame = games.find((g) => g.id === selectedGameId);
 
   const [console_, setConsole] = useState(selectedGame?.plateformes[0]);
   const [antiSpoil, setAntiSpoil] = useState(true);
+
+  // Choix passés par l'URL, jamais mémorisés côté serveur -> une nouvelle conversation repart d'un formulaire vierge
+  function handleStart() {
+    if (!selectedGame || !console_) return;
+    const params = new URLSearchParams({ jeuId: selectedGame.id, console: console_, antiSpoil: String(antiSpoil) });
+    router.push(`/chat/conversation?${params.toString()}`);
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -74,7 +84,7 @@ export function GameSelectorForm({ games }: Props) {
         <Switch checked={antiSpoil} onCheckedChange={setAntiSpoil} />
       </section>
 
-      <Button type="button" className="w-full" disabled={!selectedGame || !console_}>
+      <Button type="button" className="w-full" disabled={!selectedGame || !console_} onClick={handleStart}>
         Commencer le chat
       </Button>
     </div>

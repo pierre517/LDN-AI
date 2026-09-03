@@ -1,51 +1,57 @@
+import type { NextRequest } from "next/server";
+import { convertToModelMessages, createUIMessageStreamResponse, streamText, toUIMessageStream, type UIMessage } from "ai";
+import { groq } from "@ai-sdk/groq";
 import { requireUser } from "@/backend/middleware/auth";
 import { validateGameId } from "@/features/game-selector/application/validateGameId";
 import { createConversation, getConversation } from "@/backend/models/conversations";
-import { addMessage, getMessages } from "@/backend/models/messages";
+import { addMessage } from "@/backend/models/messages";
+import { buildSystemPrompt } from "@/features/chat/application/buildSystemPrompt";
 
-type ChatRequest = {
-  conversationId?: string;
-  jeuId: string;
-  message: string;
-};
+// Toute la logique métier du chat vit ici — route.ts se contente de retourner ce que cette fonction renvoie
+export async function handleChatMessage(request: NextRequest) {
+  const { messages, conversationId, jeuId, console: consoleName, antiSpoil } = (await request.json()) as {
+    messages: UIMessage[];
+    conversationId?: string;
+    jeuId: string;
+    console: string;
+    antiSpoil: boolean;
+  };
 
-// Point d'entrée métier appelé par la route API (app/api/chat/route.ts, LDN-56)
-export async function handleChatMessage(request: ChatRequest) {
-  // 1. Vérifie que l'utilisateur est bien connecté (jamais confiance au client)
   const user = await requireUser();
-  if (!user) {
-    return { error: "Non authentifié", status: 401 as const };
-  }
+  if (!user) return new Response("Non authentifié", { status: 401 });
 
-  // 2. Vérifie que le jeu demandé existe vraiment et est actif
-  const game = validateGameId(request.jeuId);
-  if (!game) {
-    return { error: "Jeu inconnu", status: 400 as const };
-  }
+  const game = validateGameId(jeuId);
+  if (!game) return new Response("Jeu inconnu", { status: 400 });
 
-  // 3. Récupère la conversation existante, ou en crée une nouvelle si c'est le premier message
-  let conversation;
-  if (request.conversationId) {
-    const { data } = await getConversation(request.conversationId, user.id);
-    conversation = data;
-  } else {
-    const { data } = await createConversation(user.id, game.id);
-    conversation = data;
-  }
+  // Récupère la conversation existante, ou en crée une nouvelle si c'est le premier message
+  const conversation = conversationId
+    ? (await getConversation(conversationId, user.id)).data
+    : (await createConversation(user.id, game.id)).data;
 
-  if (!conversation) {
-    return { error: "Conversation introuvable", status: 404 as const };
-  }
+  if (!conversation) return new Response("Conversation introuvable", { status: 404 });
 
-  // 4. Enregistre le message de l'utilisateur
-  await addMessage(conversation.id, "user", request.message);
+  const lastUserText = messages[messages.length - 1]?.parts.find((part) => part.type === "text")?.text ?? "";
+  await addMessage(conversation.id, "user", lastUserText);
 
-  // TODO (LDN-57 à LDN-60) : remplacer ce message provisoire par le vrai appel au moteur IA
-  // (Groq + recherche Tavily + traduction) — pas encore construit à ce stade du projet.
-  const reponseProvisoire = "Réponse de l'IA à venir (Epic 5, LDN-57).";
-  await addMessage(conversation.id, "assistant", reponseProvisoire);
+  const result = streamText({
+    model: groq("openai/gpt-oss-120b"),
+    system: buildSystemPrompt({ game, console: consoleName, antiSpoil }),
+    messages: await convertToModelMessages(messages),
+    // Une fois le flux terminé, on enregistre la réponse complète de l'IA
+    onFinish: async ({ text }) => {
+      await addMessage(conversation.id, "assistant", text);
+    },
+  });
 
-  const { data: messages } = await getMessages(conversation.id);
-
-  return { conversation, messages, status: 200 as const };
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({
+      stream: result.stream,
+      // Attache l'id de conversation au message, pour que le client puisse le récupérer et le renvoyer ensuite
+      messageMetadata: ({ part }) => {
+        if (part.type === "start") {
+          return { conversationId: conversation.id };
+        }
+      },
+    }),
+  });
 }
