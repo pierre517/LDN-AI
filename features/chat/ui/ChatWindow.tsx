@@ -45,7 +45,13 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp, antiSpoil }:
           }}
         />
       ))}
-      {status === "submitted" && <SearchIndicator />}
+      {/* "streaming" démarre dès le premier appel d'outil, pas seulement au premier mot du texte —
+          donc tant qu'aucun texte n'est encore visible, on considère qu'une recherche est en cours */}
+      {(status === "submitted" ||
+        (status === "streaming" &&
+          !messages[messages.length - 1]?.parts.some((part) => part.type === "text" && part.text.length > 0))) && (
+        <SearchIndicator />
+      )}
       <ChatInput gameName={gameName} onSend={(text) => sendMessage({ text })} />
     </div>
   );
