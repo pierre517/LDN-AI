@@ -1,5 +1,6 @@
 "use server"; // Ce fichier ne s'exécute jamais dans le navigateur, uniquement côté serveur
 
+import { redirect } from "next/navigation";
 import { signIn, signUp } from "./auth";
 
 export type AuthFormState = { error: string | null };
@@ -9,7 +10,10 @@ export async function loginAction(_prevState: AuthFormState, formData: FormData)
   const password = formData.get("password") as string;
 
   const result = await signIn(email, password);
-  return { error: result.error };
+  if (result.error) return { error: result.error };
+
+  // Connexion réussie -> direction la sélection du jeu/console, avant de démarrer un chat
+  redirect("/chat");
 }
 
 export async function signupAction(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -33,5 +37,8 @@ export async function signupAction(_prevState: AuthFormState, formData: FormData
   }
 
   const result = await signUp(email, password, pseudo);
-  return { error: result.error };
+  if (result.error) return { error: result.error };
+
+  // Confirmation email désactivée sur Supabase -> une session existe déjà, direction /chat
+  redirect("/chat");
 }
