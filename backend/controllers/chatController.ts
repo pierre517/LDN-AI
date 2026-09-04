@@ -49,7 +49,7 @@ export async function handleChatMessage(request: NextRequest) {
     messages: await convertToModelMessages(messages),
     tools: {
       searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources }),
-      translateTerms: createTranslateTermsTool({ jeuId: game.id, sources: game.sources }),
+      translateTerms: createTranslateTermsTool({ jeuId: game.id, gameName: game.nom }),
       saveTranslations: createSaveTranslationsTool({ jeuId: game.id }),
     },
     // Sans ça, le flux s'arrête dès le premier appel d'outil — on autorise jusqu'à 5 étapes
