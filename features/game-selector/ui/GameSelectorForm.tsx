@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import type { GameWithDetails } from "@/features/game-selector/domain/types";
 
 type Props = { games: GameWithDetails[] };
@@ -17,12 +16,11 @@ export function GameSelectorForm({ games }: Props) {
   const selectedGame = games.find((g) => g.id === selectedGameId);
 
   const [console_, setConsole] = useState(selectedGame?.plateformes[0]);
-  const [antiSpoil, setAntiSpoil] = useState(true);
 
   // Choix passés par l'URL, jamais mémorisés côté serveur -> une nouvelle conversation repart d'un formulaire vierge
   function handleStart() {
     if (!selectedGame || !console_) return;
-    const params = new URLSearchParams({ jeuId: selectedGame.id, console: console_, antiSpoil: String(antiSpoil) });
+    const params = new URLSearchParams({ jeuId: selectedGame.id, console: console_ });
     router.push(`/chat/conversation?${params.toString()}`);
   }
 
@@ -70,18 +68,6 @@ export function GameSelectorForm({ games }: Props) {
             </Button>
           ))}
         </div>
-      </section>
-
-      <section className="flex items-center justify-between">
-        <div>
-          <h2 className="font-heading text-lg">Anti-spoil</h2>
-          <p className="text-xs text-muted-foreground">
-            {antiSpoil
-              ? "Activé — l'IA préviendra avant tout élément d'histoire"
-              : "Désactivé — les réponses peuvent contenir des spoils"}
-          </p>
-        </div>
-        <Switch checked={antiSpoil} onCheckedChange={setAntiSpoil} />
       </section>
 
       <Button type="button" className="w-full" disabled={!selectedGame || !console_} onClick={handleStart}>

@@ -19,7 +19,12 @@ export async function getCachedResults(jeuId: string, question: string) {
     .gt("expiration", new Date().toISOString())
     .maybeSingle(); // pas d'erreur si 0 résultat (cache miss) contrairement à .single()
 
-  if (error || !data) return null;
+  if (error) {
+    console.error("Erreur lecture cache_recherches:", error);
+    return null;
+  }
+  if (!data) return null; // cache miss normal, rien à logger
+
   return data.resultats as TavilySearchResult[];
 }
 
@@ -36,5 +41,6 @@ export async function saveCachedResults(jeuId: string, question: string, resulta
     expiration: expiration.toISOString(),
   });
 
+  if (error) console.error("Erreur écriture cache_recherches:", error);
   return { error };
 }

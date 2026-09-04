@@ -19,12 +19,11 @@ import { createSaveTranslationsTool } from "@/features/chat/application/saveTran
 
 // Toute la logique métier du chat vit ici — route.ts se contente de retourner ce que cette fonction renvoie
 export async function handleChatMessage(request: NextRequest) {
-  const { messages, conversationId, jeuId, console: consoleName, antiSpoil } = (await request.json()) as {
+  const { messages, conversationId, jeuId, console: consoleName } = (await request.json()) as {
     messages: UIMessage[];
     conversationId?: string;
     jeuId: string;
     console: string;
-    antiSpoil: boolean;
   };
 
   const user = await requireUser();
@@ -45,7 +44,7 @@ export async function handleChatMessage(request: NextRequest) {
 
   const result = streamText({
     model: groq("openai/gpt-oss-120b"),
-    system: buildSystemPrompt({ game, console: consoleName, antiSpoil }),
+    system: buildSystemPrompt({ game, console: consoleName }),
     messages: await convertToModelMessages(messages),
     tools: {
       searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources }),

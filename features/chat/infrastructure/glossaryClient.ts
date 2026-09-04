@@ -15,7 +15,11 @@ export async function getKnownTranslations(jeuId: string, termesAnglais: string[
     .in("terme_anglais", termesAnglais)
     .gt("expiration", new Date().toISOString());
 
-  if (error || !data) return {};
+  if (error) {
+    console.error("Erreur lecture glossaire_termes:", error);
+    return {};
+  }
+  if (!data) return {};
 
   // Transforme le tableau de lignes en dictionnaire { terme anglais -> terme français }
   return Object.fromEntries(data.map((ligne) => [ligne.terme_anglais, ligne.terme_francais]));
@@ -33,5 +37,6 @@ export async function saveGlossaryTerm(jeuId: string, termeAnglais: string, term
     expiration: expiration.toISOString(),
   });
 
+  if (error) console.error("Erreur écriture glossaire_termes:", error);
   return { error };
 }

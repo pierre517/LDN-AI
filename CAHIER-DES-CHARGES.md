@@ -1,6 +1,6 @@
 # Cahier des charges — Assistant IA jeux vidéo (V1)
 
-Ce document sert de référence pour la documentation du projet et pour tout assistant IA utilisé pendant le développement (voir section 17).
+Ce document sert de référence pour la documentation du projet et pour tout assistant IA utilisé pendant le développement (voir section 16).
 
 ## 1. Contexte et besoin
 
@@ -8,13 +8,13 @@ Les soluces et informations précises sur un jeu vidéo sont dispersées entre w
 
 ## 2. Objectif
 
-Une plateforme web qui répond aux questions sur un jeu vidéo précis en s'appuyant sur une recherche ciblée dans les sources communautaires de ce jeu, avec une option anti-spoil et des noms propres fiables dans la langue du joueur, pensée mobile-first.
+Une plateforme web qui répond aux questions sur un jeu vidéo précis en s'appuyant sur une recherche ciblée dans les sources communautaires de ce jeu, avec des noms propres fiables dans la langue du joueur, pensée mobile-first.
 
 ## 3. Périmètre V1
 
 - Un seul jeu disponible au lancement (Elden Ring) — l'architecture doit permettre d'en ajouter d'autres sans réécriture de code
 - Compte utilisateur obligatoire (pas d'usage anonyme)
-- Formulaire de sélection : jeu, console, anti-spoil
+- Formulaire de sélection : jeu, console
 - Chat avec recherche automatique dans les sources du jeu
 - Historique des conversations sauvegardé par compte
 
@@ -23,7 +23,7 @@ Une plateforme web qui répond aux questions sur un jeu vidéo précis en s'appu
 Pages principales de l'application :
 
 - **Accueil / Connexion** : page publique, accessible sans compte — sert à la fois de vitrine de l'outil et de point d'entrée pour se connecter ou s'inscrire (voir maquette)
-- **Nouveau chat** : formulaire de sélection (jeu, console, anti-spoil) puis conversation avec l'assistant — le formulaire est présenté à chaque nouvelle conversation, sans mémoriser les choix précédents
+- **Nouveau chat** : formulaire de sélection (jeu, console) puis conversation avec l'assistant — le formulaire est présenté à chaque nouvelle conversation, sans mémoriser les choix précédents
 - **Conversation** : chat en cours avec l'IA
 - **Historique** : liste des conversations passées de l'utilisateur
 - **Paramètres** : déconnexion, suppression de compte
@@ -39,7 +39,7 @@ Le menu Paramètres contient :
 
 ### 4.1 Inscription (signup)
 
-La case à cocher d'acceptation des conditions contient deux liens : Conditions d'utilisation et Politique de confidentialité (voir section 15). Ouvrir l'un de ces liens doit permettre à l'utilisateur de consulter la page légale correspondante, puis de revenir automatiquement sur la page d'inscription — sans perdre ce qu'il avait déjà saisi dans le formulaire.
+La case à cocher d'acceptation des conditions contient deux liens : Conditions d'utilisation et Politique de confidentialité (voir section 14). Ouvrir l'un de ces liens doit permettre à l'utilisateur de consulter la page légale correspondante, puis de revenir automatiquement sur la page d'inscription — sans perdre ce qu'il avait déjà saisi dans le formulaire.
 
 ### 4.2 Historique
 
@@ -52,7 +52,7 @@ Le footer de cette page affiche les liens Conditions d'utilisation et Politique 
 Fonctionnalité officielle de l'application, accessible depuis Paramètres. Comportement attendu :
 
 1. **Confirmation explicite** demandée à l'utilisateur avant toute suppression (empêcher un clic accidentel de supprimer définitivement un compte)
-2. **Suppression complète des données personnelles** associées au compte — `auth.users`, `profiles`, `conversations`, `messages` — conformément au droit à l'effacement RGPD (section 15)
+2. **Suppression complète des données personnelles** associées au compte — `auth.users`, `profiles`, `conversations`, `messages` — conformément au droit à l'effacement RGPD (section 14)
 3. **Déconnexion immédiate** et redirection vers la page d'accueil
 
 Ce qui n'est **pas** supprimé : `cache_recherches` et `glossaire_termes` restent intacts — ces tables ne contiennent aucune donnée personnelle (indexées par jeu et par question/terme, jamais par utilisateur), donc rien à effacer côté RGPD, et ça évite de perdre un cache utile à tous les autres utilisateurs pour une suppression qui ne les concerne pas.
@@ -150,7 +150,7 @@ Le modèle participe quand même à la recherche via le tool calling : il reform
 
 Séquence :
 1. L'utilisateur pose une question
-2. Vérification en amont : le prompt système vérifie que la question porte sur le jeu sélectionné ; si elle est hors sujet, le modèle redirige poliment sans chercher (voir section 14, recadrage)
+2. Vérification en amont : le prompt système vérifie que la question porte sur le jeu sélectionné ; si elle est hors sujet, le modèle redirige poliment sans chercher (voir section 13, recadrage)
 3. Pour une question sur le jeu, le modèle formule la requête de recherche optimale et la demande (tool calling de l'AI SDK)
 4. Le backend exécute réellement la recherche demandée, restreinte aux sources du jeu actif
 5. Le modèle identifie les noms propres présents dans les résultats et vérifie/complète leur traduction française (voir 10.4)
@@ -167,7 +167,7 @@ Séquence :
 
 ### 10.3 Cache des recherches
 
-Pour économiser le quota Tavily (partagé entre tous les utilisateurs), les résultats de recherche bruts sont mis en cache dans Supabase (table `cache_recherches`), indexés par jeu + question normalisée, avec une expiration de 30 jours. On cache les résultats de recherche, jamais la réponse finale du modèle, pour que l'anti-spoil reste personnalisé à chaque utilisateur.
+Pour économiser le quota Tavily (partagé entre tous les utilisateurs), les résultats de recherche bruts sont mis en cache dans Supabase (table `cache_recherches`), indexés par jeu + question normalisée, avec une expiration de 30 jours. On cache les résultats de recherche, jamais la réponse finale du modèle, qui reste propre à chaque conversation.
 
 ### 10.4 Traduction des noms propres (objets, boss, lieux, PNJ)
 
@@ -176,7 +176,7 @@ Problème : les sources (en anglais) et le jeu en version française n'utilisent
 Solution retenue : traduction systématique, avec mise en cache automatique dans une table dédiée.
 
 1. Après la recherche principale, le modèle identifie les noms propres présents dans les résultats
-2. Pour chaque nom, vérification dans `glossaire_termes` (voir section 13) — si déjà connu pour ce jeu, réutilisation immédiate, aucune nouvelle recherche
+2. Pour chaque nom, vérification dans `glossaire_termes` (voir section 12) — si déjà connu pour ce jeu, réutilisation immédiate, aucune nouvelle recherche
 3. Pour les noms encore inconnus, une seule recherche Tavily groupée (tous les noms de la réponse en cours, pas un appel par nom) pour trouver leurs équivalents français
 4. Les nouvelles correspondances trouvées sont ajoutées à `glossaire_termes`, réutilisables pour tous les utilisateurs suivants
 5. Si aucune source française fiable n'est trouvée, le modèle utilise le nom anglais dans sa réponse plutôt que d'inventer une traduction
@@ -197,7 +197,7 @@ games:
     statut: actif
 ```
 
-`id` (le slug, ex : `elden-ring`) est l'identifiant utilisé partout dans l'application et dans les tables (`jeu_id`, voir section 13) — stable une fois choisi, jamais modifié, y compris si le champ `nom` change plus tard.
+`id` (le slug, ex : `elden-ring`) est l'identifiant utilisé partout dans l'application et dans les tables (`jeu_id`, voir section 12) — stable une fois choisi, jamais modifié, y compris si le champ `nom` change plus tard.
 
 ### 11.1 Un fichier, deux lecteurs
 
@@ -218,11 +218,7 @@ RAWG fournit les métadonnées du jeu (nom, plateformes, jaquette) pour l'autoco
 
 La traduction des noms propres (section 10.4) ne demande aucune configuration supplémentaire par jeu : le glossaire `glossaire_termes` se construit automatiquement à l'usage, pour n'importe quel jeu ajouté.
 
-## 12. Anti-spoil
-
-V1 : approche "pré-prompt". Les inputs (jeu, console, anti-spoil) sont injectés dans le prompt système au début de chaque conversation, qui instruit le modèle de ne révéler aucun élément d'histoire, boss ou zone sans prévenir. Pas de suivi précis de la progression du joueur pour le V1 — complexité écartée volontairement.
-
-## 13. Base de données (Supabase)
+## 12. Base de données (Supabase)
 
 | Table | Contenu | Géré par |
 |---|---|---|
@@ -244,7 +240,7 @@ V1 : approche "pré-prompt". Les inputs (jeu, console, anti-spoil) sont injecté
 
 Ce qui n'est jamais stocké en base : le contenu complet des wikis (récupéré à la volée, mis en cache temporairement uniquement), les connaissances internes du modèle (inaccessibles).
 
-## 14. Sécurité et quotas
+## 13. Sécurité et quotas
 
 - Compte obligatoire, aucune fonctionnalité en anonyme
 - **Autorisation** : un utilisateur ne peut lire ou modifier que ses propres conversations et messages — toute route qui retourne une conversation doit vérifier que `conversation.user_id` correspond à l'utilisateur authentifié de la requête, jamais se fier uniquement à un id transmis par le client
@@ -254,7 +250,7 @@ Ce qui n'est jamais stocké en base : le contenu complet des wikis (récupéré 
 - Mots de passe : hashage bcrypt + salage aléatoire géré nativement par Supabase Auth, aucune implémentation custom ; règles configurées dans Supabase : minimum 8 caractères, au moins une majuscule, une minuscule, un chiffre et un caractère spécial
 - Sessions : tokens JWT signés, émis et vérifiés nativement par Supabase Auth ; durée du token d'accès configurée à 1h avec rafraîchissement automatique côté client (valeur par défaut Supabase)
 
-### 14.1 Gestion des erreurs
+### 13.1 Gestion des erreurs
 
 - **Erreur technique** (Groq, Tavily ou Supabase injoignable) : une nouvelle tentative automatique après un court délai, puis un message générique si ça persiste ("un souci technique est survenu, réessaie dans quelques instants") — jamais de détail technique brut affiché à l'utilisateur
 - **Quota atteint** : ce n'est pas un bug, message explicite et différent ("tu as atteint ta limite de questions pour aujourd'hui")
@@ -262,7 +258,7 @@ Ce qui n'est jamais stocké en base : le contenu complet des wikis (récupéré 
 - **Erreur en plein streaming** : le flux s'arrête, un message d'erreur s'ajoute à la suite de ce qui a déjà été généré — pas de perte du texte déjà affiché
 - **Journalisation** : les erreurs sont loguées côté serveur (logs Vercel, suffisant pour un V1) pour pouvoir déboguer après coup
 
-## 15. Conformité et mentions légales
+## 14. Conformité et mentions légales
 
 Le projet collecte des données personnelles (email via Supabase Auth, historique des conversations) et utilise des services tiers qui traitent ces données ou les requêtes (Groq, OpenRouter, Tavily, RAWG, Supabase, Vercel). Deux pages sont nécessaires avant une mise en production réelle :
 
@@ -273,7 +269,7 @@ Acceptation obligatoire des CGU à la création de compte (case à cocher, voir 
 
 *Ceci n'est pas un avis juridique — pour un projet qui dépasserait le cadre d'un portfolio, une relecture par un professionnel du droit reste recommandée.*
 
-## 16. SEO et référencement
+## 15. SEO et référencement
 
 - **Rendu serveur natif** : Next.js App Router rend les pages en HTML côté serveur par défaut (Server Components) — contrairement à une SPA React classique, indexable nativement par les moteurs de recherche sans travail supplémentaire
 - **Metadata API** : utiliser l'API Metadata de Next.js (`generateMetadata`) pour le titre, la description et les balises Open Graph de chaque page publique
@@ -281,7 +277,7 @@ Acceptation obligatoire des CGU à la création de compte (case à cocher, voir 
 - **Contenu indexable vs. privé** : le chat lui-même (derrière compte) n'est pas indexable — logique, comme pour n'importe quel assistant IA. La page d'accueil reste publique et optimisée pour la découverte du site, pas pour exposer le contenu généré
 - **Mobile-first = déjà un avantage SEO** : Google indexe en priorité la version mobile, ce qui est déjà l'axe central du projet
 
-## 17. Instructions pour l'assistant IA (développement)
+## 16. Instructions pour l'assistant IA (développement)
 
 Ces règles s'appliquent à tout assistant IA travaillant sur ce projet pendant le développement. Contexte général à garder en tête tout au long : je suis développeur junior — le code produit doit rester compréhensible pour moi, pas seulement fonctionnel. Répartition des rôles : c'est moi qui développe et qui exécute les commandes Git (créer une branche, committer, pousser) — l'IA organise et propose le découpage du travail, mais n'exécute jamais Git elle-même.
 
