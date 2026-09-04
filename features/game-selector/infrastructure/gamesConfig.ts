@@ -24,6 +24,7 @@ export function getGames(): Game[] {
     nom: game.nom,
     rawgId: game.rawg_id, // conversion snake_case (YAML) -> camelCase (notre domaine)
     plateformes: game.plateformes,
+    sources: game.sources,
     statut: game.statut as "actif" | "inactif",
   }));
 }

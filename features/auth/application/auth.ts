@@ -14,6 +14,8 @@ export async function signUp(email: string, password: string, pseudo: string) {
     .insert({ id: data.user.id, pseudo });
 
   if (profileError) {
+    // Log serveur (visible dans le terminal npm run dev / logs Vercel) pour voir le vrai message Postgres
+    console.error("Erreur création profil:", profileError);
     return { error: "Compte créé, mais erreur lors de la création du profil" };
   }
 

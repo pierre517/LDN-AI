@@ -3,6 +3,8 @@ export type Game = {
   nom: string;
   rawgId: number;
   plateformes: string[];
+  // Domaines communautaires autorisés pour la recherche Tavily de ce jeu (LDN-67)
+  sources: string[];
   statut: "actif" | "inactif";
 };
 
