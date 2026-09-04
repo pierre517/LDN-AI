@@ -121,9 +121,7 @@ Next.js impose le routing par fichiers : chaque route API doit avoir un fichier 
 ```
 app/
   api/
-    chat/route.ts          → point d'entrée fin, appelle backend/controllers/chatController.ts
-    games/search/route.ts  → appelle backend/controllers/gameController.ts
-    auth/.../route.ts      → appelle backend/controllers/authController.ts
+    chat/route.ts → point d'entrée fin, appelle backend/controllers/chatController.ts
 
 backend/
   controllers/ → validation des requêtes, appel de la logique métier
@@ -131,14 +129,16 @@ backend/
   models/      → accès aux tables Supabase
 ```
 
+L'authentification (connexion, inscription) n'utilise pas cette structure `app/api/` + `backend/controllers/` : elle passe par des **Server Actions** Next.js (`features/auth/application/actions.ts`, `"use server"`), appelées directement depuis les formulaires (`features/auth/ui/`), sans route API intermédiaire — pattern plus idiomatique pour des mutations de formulaire avec l'App Router. De même, la sélection de jeu ne passe par aucune route API : V1 lit une liste statique depuis `config/games.yaml` côté serveur, sans recherche live à exposer.
+
 Pas de dossier `routes/` séparé dans `backend/` : l'arborescence de `app/api/` joue déjà ce rôle, un `routes/` par-dessus serait redondant.
 
 Cette séparation apporte de la testabilité (tester `chatController.ts` par un simple appel de fonction, sans requête HTTP réelle) et de la cohérence avec le front, qui suit déjà le même principe (`app/` fin, logique dans `features/`).
 
 ### 9.1 Deux choses différentes portent le nom "middleware"
 
-- **`middleware.ts`** (fichier spécial Next.js, à la racine du projet) : usage unique et étroit — rafraîchir automatiquement le token de session Supabase, nécessaire car les Server Components ne peuvent pas écrire de cookies eux-mêmes. C'est le pattern officiellement recommandé par Supabase pour Next.js, avec une gestion des cookies et un environnement d'exécution (Edge Runtime) qui lui sont propres.
-- **`backend/middleware/`** (fonctions normales, sans lien avec le fichier ci-dessus) : vérifie l'identité de l'utilisateur sur chaque route API sensible en rappelant Supabase côté serveur (`getUser()`, jamais en faisant confiance à la session côté client, qui peut être falsifiée), applique le quota, gère les erreurs. Du code TypeScript classique, appelé depuis les controllers, sans contrainte Edge Runtime.
+- **`proxy.ts`** (fichier spécial Next.js, à la racine du projet — renommé depuis `middleware.ts` avec Next.js 16, après la rédaction initiale de ce document) : usage unique et étroit — rafraîchir automatiquement le token de session Supabase, nécessaire car les Server Components ne peuvent pas écrire de cookies eux-mêmes. C'est le pattern officiellement recommandé par Supabase pour Next.js, avec une gestion des cookies et un environnement d'exécution (Edge Runtime) qui lui sont propres.
+- **`backend/middleware/`** (fonctions normales, sans lien avec le fichier ci-dessus) : vérifie l'identité de l'utilisateur sur chaque route API sensible en rappelant Supabase côté serveur (`getClaims()` — validation locale du JWT à partir des clés publiques Supabase, plus rapide qu'un `getUser()` qui ferait un aller-retour réseau à chaque appel ; jamais en faisant confiance à la session côté client, qui peut être falsifiée), applique le quota, gère les erreurs. Du code TypeScript classique, appelé depuis les controllers, sans contrainte Edge Runtime.
 
 ## 10. Fonctionnement du moteur IA
 
