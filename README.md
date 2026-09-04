@@ -2,7 +2,7 @@
 
 **Pour plus de détails, consultez le fichier "cahier des charges.md à la racine du repo**
 
-**Un assistant IA qui répond à tes questions sur un jeu vidéo précis, à partir d'une recherche ciblée dans ses sources communautaires — avec anti-spoil et noms traduits dans ta langue.**
+**Un assistant IA qui répond à tes questions sur un jeu vidéo précis, à partir d'une recherche ciblée dans ses sources communautaires — avec des noms traduits dans ta langue.**
 
 Plutôt que de fouiller des wikis en anglais, des threads Reddit épars et des vidéos YouTube à rallonge, pose ta question directement. La V1 est disponible sur **Elden Ring** ; l'architecture est pensée pour accueillir d'autres jeux sans réécriture de code.
 
@@ -13,7 +13,6 @@ Les assistants IA généralistes répondent vite, mais approfondissent peu leurs
 ## Fonctionnalités
 
 - 🔍 **Recherche ciblée** dans les wikis et forums communautaires du jeu sélectionné
-- 🙈 **Anti-spoil personnalisable** — pose tes questions sans te faire spoiler la suite
 - 🌍 **Noms traduits automatiquement** (FR/EN) — fini les noms anglais qui ne correspondent à rien dans ta version française
 - 💬 **Historique de conversations**, par compte
 - 📱 **Mobile-first**, pensé pour être utilisé pendant que tu joues
@@ -24,7 +23,7 @@ Les assistants IA généralistes répondent vite, mais approfondissent peu leurs
 |---|---|---|
 | ![Connexion](./docs/apercu-connexion.png) | ![Configuration de la session](./docs/apercu-configuration.png) | ![Conversation](./docs/apercu-conversation.png) |
 
-On choisit son jeu, sa console et le niveau d'anti-spoil, puis on pose ses questions — les réponses citent leurs sources (Fextralife, Reddit, GameFAQs) plutôt que de sortir un avis générique.
+On choisit son jeu et sa console, puis on pose ses questions — les réponses citent leurs sources (Fextralife, Reddit, GameFAQs) plutôt que de sortir un avis générique.
 
 *Maquettes — le développement est en cours.*
 

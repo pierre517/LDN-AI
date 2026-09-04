@@ -11,17 +11,16 @@ type Props = {
   jeuId: string;
   gameName: string;
   console: string;
-  antiSpoil: boolean;
 };
 
-export function ChatWindow({ jeuId, gameName, console: consoleProp, antiSpoil }: Props) {
+export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
   // Mémorise l'id de conversation renvoyé par le serveur après le premier message envoyé
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { jeuId, console: consoleProp, antiSpoil, conversationId },
+      body: { jeuId, console: consoleProp, conversationId },
     }),
     onFinish: ({ message }) => {
       const metadata = message.metadata as { conversationId?: string } | undefined;
