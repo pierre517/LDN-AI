@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/backend/middleware/auth";
-import { validateGameId } from "@/features/game-selector/application/validateGameId";
+import { validateGameId } from "@/features/game-selector";
 import { ChatWindow } from "@/features/chat";
 
 type Props = {

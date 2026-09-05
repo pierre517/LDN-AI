@@ -1,4 +1,4 @@
-import type { Game } from "@/features/game-selector/domain/types";
+import type { Game } from "@/features/game-selector";
 
 type BuildSystemPromptParams = {
   game: Game;

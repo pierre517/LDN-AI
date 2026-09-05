@@ -7,15 +7,17 @@ import {
   toUIMessageStream,
   type UIMessage,
 } from "ai";
-import { streamChatWithFallback } from "@/features/chat/infrastructure/groqClient";
 import { requireUser } from "@/backend/middleware/auth";
-import { validateGameId } from "@/features/game-selector/application/validateGameId";
 import { createConversation, getConversation } from "@/backend/models/conversations";
 import { addMessage } from "@/backend/models/messages";
-import { buildSystemPrompt } from "@/features/chat/application/buildSystemPrompt";
-import { createSearchGameWikiTool } from "@/features/chat/application/searchTool";
-import { createTranslateTermsTool } from "@/features/chat/application/translateTermsTool";
-import { createSaveTranslationsTool } from "@/features/chat/application/saveTranslationsTool";
+import { validateGameId } from "@/features/game-selector";
+import {
+  streamChatWithFallback,
+  buildSystemPrompt,
+  createSearchGameWikiTool,
+  createTranslateTermsTool,
+  createSaveTranslationsTool,
+} from "@/features/chat";
 
 // Toute la logique métier du chat vit ici — route.ts se contente de retourner ce que cette fonction renvoie
 export async function handleChatMessage(request: NextRequest) {
