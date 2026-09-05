@@ -7,7 +7,7 @@ import {
   toUIMessageStream,
   type UIMessage,
 } from "ai";
-import { groq } from "@ai-sdk/groq";
+import { streamChatWithFallback } from "@/features/chat/infrastructure/groqClient";
 import { requireUser } from "@/backend/middleware/auth";
 import { validateGameId } from "@/features/game-selector/application/validateGameId";
 import { createConversation, getConversation } from "@/backend/models/conversations";
@@ -42,27 +42,36 @@ export async function handleChatMessage(request: NextRequest) {
   const lastUserText = messages[messages.length - 1]?.parts.find((part) => part.type === "text")?.text ?? "";
   await addMessage(conversation.id, "user", lastUserText);
 
-  const result = streamText({
-    model: groq("openai/gpt-oss-120b"),
-    system: buildSystemPrompt({ game, console: consoleName }),
-    messages: await convertToModelMessages(messages),
-    tools: {
-      searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources }),
-      translateTerms: createTranslateTermsTool({ jeuId: game.id, gameName: game.nom }),
-      saveTranslations: createSaveTranslationsTool({ jeuId: game.id }),
-    },
-    // Sans ça, le flux s'arrête dès le premier appel d'outil — on autorise jusqu'à 5 étapes
-    // (recherche -> traduction -> sauvegarde -> réponse finale) avant de forcer l'arrêt.
-    stopWhen: isStepCount(5),
-    // Une fois le flux terminé, on enregistre la réponse complète de l'IA
-    onFinish: async ({ text }) => {
-      await addMessage(conversation.id, "assistant", text);
-    },
-  });
+  // Calculé une seule fois : réutilisé pour la tentative principale et, si besoin, celle de secours
+  const modelMessages = await convertToModelMessages(messages);
+
+  const stream = await streamChatWithFallback((model) =>
+    streamText({
+      model,
+      system: buildSystemPrompt({ game, console: consoleName }),
+      messages: modelMessages,
+      tools: {
+        searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources }),
+        translateTerms: createTranslateTermsTool({ jeuId: game.id, gameName: game.nom }),
+        saveTranslations: createSaveTranslationsTool({ jeuId: game.id }),
+      },
+      // Sans ça, le flux s'arrête dès le premier appel d'outil — on autorise jusqu'à 5 étapes
+      // (recherche -> traduction -> sauvegarde -> réponse finale) avant de forcer l'arrêt.
+      stopWhen: isStepCount(5),
+      // Log serveur pour toute erreur pendant la génération (au cas où, même hors quota)
+      onError: ({ error }) => {
+        console.error("Erreur pendant la génération de la réponse IA :", error);
+      },
+      // Une fois le flux terminé, on enregistre la réponse complète de l'IA
+      onFinish: async ({ text }) => {
+        await addMessage(conversation.id, "assistant", text);
+      },
+    }),
+  );
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({
-      stream: result.stream,
+      stream,
       // Attache l'id de conversation au message, pour que le client puisse le récupérer et le renvoyer ensuite
       messageMetadata: ({ part }) => {
         if (part.type === "start") {
