@@ -8,6 +8,7 @@ import {
   type UIMessage,
 } from "ai";
 import { requireUser } from "@/backend/middleware/auth";
+import { enforceQuota } from "@/backend/middleware/quota";
 import { createConversation, getConversation } from "@/backend/models/conversations";
 import { addMessage } from "@/backend/models/messages";
 import { validateGameId } from "@/features/game-selector";
@@ -30,6 +31,12 @@ export async function handleChatMessage(request: NextRequest) {
 
   const user = await requireUser();
   if (!user) return new Response("Non authentifié", { status: 401 });
+
+  const allowed = await enforceQuota(user.id);
+  if (!allowed) {
+    // Corps volontairement distinct de "Non authentifié" -> LDN-75 s'appuiera dessus côté UI
+    return Response.json({ error: "quota_reached" }, { status: 429 });
+  }
 
   const game = validateGameId(jeuId);
   if (!game) return new Response("Jeu inconnu", { status: 400 });
