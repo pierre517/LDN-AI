@@ -31,9 +31,14 @@ export function createTranslateTermsTool({ jeuId, gameName }: Params) {
       // le nom français officiel n'apparaît presque jamais sur les wikis/forums anglais configurés.
       // Le nom du jeu est ajouté à la requête pour compenser l'absence de filtre par domaine.
       const requete = `${gameName} nom français officiel : ${inconnus.join(", ")}`;
-      const resultatsRecherche = await searchGameSources(requete, []);
 
-      return { traductionsConnues: connus, resultatsRecherche };
+      try {
+        const resultatsRecherche = await searchGameSources(requete, []);
+        return { traductionsConnues: connus, resultatsRecherche };
+      } catch {
+        // Échec partiel (cahier des charges 10.4) : la réponse part quand même avec les noms anglais
+        return { traductionsConnues: connus, resultatsRecherche: null };
+      }
     },
   });
 }

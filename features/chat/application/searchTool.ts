@@ -21,9 +21,15 @@ export function createSearchGameWikiTool({ jeuId, sources }: Params) {
       const cache = await getCachedResults(jeuId, query);
       if (cache) return { resultats: cache };
 
-      const resultats = await searchGameSources(query, sources);
-      await saveCachedResults(jeuId, query, resultats);
-      return { resultats };
+      try {
+        const resultats = await searchGameSources(query, sources);
+        await saveCachedResults(jeuId, query, resultats);
+        return { resultats };
+      } catch {
+        // Tavily indisponible malgré le retry interne -> pas de plantage du flux en cours (LDN-78 gère le
+        // cas mid-stream) : le modèle répond avec ce qu'il a plutôt que d'échouer totalement
+        return { resultats: [], erreur: "recherche indisponible" };
+      }
     },
   });
 }
