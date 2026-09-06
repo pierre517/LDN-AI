@@ -6,6 +6,7 @@ import { useState } from "react";
 import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { SearchIndicator } from "./SearchIndicator";
+import { QuotaReachedMessage } from "./QuotaReachedMessage";
 
 type Props = {
   jeuId: string;
@@ -17,7 +18,7 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
   // Mémorise l'id de conversation renvoyé par le serveur après le premier message envoyé
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: { jeuId, console: consoleProp, conversationId },
@@ -29,6 +30,9 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
       }
     },
   });
+
+  // Le serveur renvoie le corps { error: "quota_reached" } (429) tel quel dans error.message -> on le détecte ainsi
+  const isQuotaReached = error?.message.includes("quota_reached") ?? false;
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,7 +55,11 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
           !messages[messages.length - 1]?.parts.some((part) => part.type === "text" && part.text.length > 0))) && (
         <SearchIndicator />
       )}
-      <ChatInput gameName={gameName} onSend={(text) => sendMessage({ text })} />
+      {isQuotaReached ? (
+        <QuotaReachedMessage />
+      ) : (
+        <ChatInput gameName={gameName} onSend={(text) => sendMessage({ text })} />
+      )}
     </div>
   );
 }
