@@ -16,7 +16,7 @@ export function MessageBubble({ message }: Props) {
             : "whitespace-pre-wrap rounded-lg bg-card p-4 text-sm"
         }
       >
-        {message.contenu}
+        <p>{message.contenu}</p>
       </div>
     </div>
   );
