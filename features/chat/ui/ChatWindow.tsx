@@ -7,6 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { SearchIndicator } from "./SearchIndicator";
 import { QuotaReachedMessage } from "./QuotaReachedMessage";
+import { TechnicalErrorMessage } from "./TechnicalErrorMessage";
 
 type Props = {
   jeuId: string;
@@ -31,8 +32,9 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
     },
   });
 
-  // Le serveur renvoie le corps { error: "quota_reached" } (429) tel quel dans error.message -> on le détecte ainsi
+  // Le serveur renvoie le corps { error: "..." } (429 ou 503) tel quel dans error.message -> on le détecte ainsi
   const isQuotaReached = error?.message.includes("quota_reached") ?? false;
+  const isTechnicalError = error?.message.includes("technical_error") ?? false;
 
   return (
     <div className="flex flex-col gap-4">
@@ -57,6 +59,8 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
       )}
       {isQuotaReached ? (
         <QuotaReachedMessage />
+      ) : isTechnicalError ? (
+        <TechnicalErrorMessage />
       ) : (
         <ChatInput gameName={gameName} onSend={(text) => sendMessage({ text })} />
       )}

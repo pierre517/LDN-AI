@@ -9,6 +9,7 @@ import {
 } from "ai";
 import { requireUser } from "@/backend/middleware/auth";
 import { enforceQuota } from "@/backend/middleware/quota";
+import { withRetry } from "@/backend/middleware/errors";
 import { createConversation, getConversation } from "@/backend/models/conversations";
 import { addMessage } from "@/backend/models/messages";
 import { validateGameId } from "@/features/game-selector";
@@ -41,10 +42,16 @@ export async function handleChatMessage(request: NextRequest) {
   const game = validateGameId(jeuId);
   if (!game) return new Response("Jeu inconnu", { status: 400 });
 
-  // Récupère la conversation existante, ou en crée une nouvelle si c'est le premier message
-  const conversation = conversationId
-    ? (await getConversation(conversationId, user.id)).data
-    : (await createConversation(user.id, game.id)).data;
+  // Supabase peut être injoignable (panne réseau) -> une tentative de plus avant d'abandonner
+  let conversation;
+  try {
+    // Récupère la conversation existante, ou en crée une nouvelle si c'est le premier message
+    conversation = conversationId
+      ? (await withRetry(() => getConversation(conversationId, user.id), "supabase-get-conversation")).data
+      : (await withRetry(() => createConversation(user.id, game.id), "supabase-create-conversation")).data;
+  } catch {
+    return Response.json({ error: "technical_error" }, { status: 503 });
+  }
 
   if (!conversation) return new Response("Conversation introuvable", { status: 404 });
 

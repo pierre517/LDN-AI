@@ -1,6 +1,7 @@
 import { tavily } from "@tavily/core";
 
 const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
+const RETRY_DELAY_MS = 500;
 
 export type TavilySearchResult = {
   titre: string;
@@ -8,8 +9,23 @@ export type TavilySearchResult = {
   contenu: string;
 };
 
-// Recherche restreinte aux domaines communautaires du jeu actif (includeDomains = whitelist stricte)
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Recherche restreinte aux domaines communautaires du jeu actif (includeDomains = whitelist stricte).
+// Tavily peut être injoignable (panne réseau) -> une seule nouvelle tentative après un court délai.
 export async function searchGameSources(query: string, sources: string[]): Promise<TavilySearchResult[]> {
+  try {
+    return await callTavily(query, sources);
+  } catch (firstError) {
+    console.error("Erreur technique (tavily-search), nouvelle tentative :", firstError);
+    await wait(RETRY_DELAY_MS);
+    return await callTavily(query, sources);
+  }
+}
+
+async function callTavily(query: string, sources: string[]): Promise<TavilySearchResult[]> {
   const response = await client.search(query, {
     includeDomains: sources,
     maxResults: 5,
