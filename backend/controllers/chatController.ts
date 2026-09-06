@@ -94,6 +94,9 @@ export async function handleChatMessage(request: NextRequest) {
           return { conversationId: conversation.id };
         }
       },
+      // Erreur en plein streaming (ex: Groq/Tavily tombe après le début de la réponse) -> le flux s'arrête
+      // proprement et le client reçoit ce code générique, jamais le détail technique brut (cahier des charges 13.1)
+      onError: () => "technical_error",
     }),
   });
 }

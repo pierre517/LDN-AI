@@ -19,7 +19,7 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
   // Mémorise l'id de conversation renvoyé par le serveur après le premier message envoyé
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
 
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, status, error, clearError } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: { jeuId, console: consoleProp, conversationId },
@@ -59,10 +59,19 @@ export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
       )}
       {isQuotaReached ? (
         <QuotaReachedMessage />
-      ) : isTechnicalError ? (
-        <TechnicalErrorMessage />
       ) : (
-        <ChatInput gameName={gameName} onSend={(text) => sendMessage({ text })} />
+        <>
+          {/* Erreur technique (avant ou en plein streaming) : le message reste visible mais n'empêche pas
+              de retaper une question tout de suite après, contrairement au quota qui bloque pour la journée */}
+          {isTechnicalError && <TechnicalErrorMessage />}
+          <ChatInput
+            gameName={gameName}
+            onSend={(text) => {
+              if (error) clearError();
+              sendMessage({ text });
+            }}
+          />
+        </>
       )}
     </div>
   );
