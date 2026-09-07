@@ -35,11 +35,11 @@ export function SignupForm() {
           J&apos;accepte les{" "}
           {/* target="_blank" = nouvel onglet, donc ce formulaire n'est jamais rechargé ni quitté :
               la saisie reste intacte, sans code de sauvegarde d'état (exigence section 4.1) */}
-          <a href="/cgu" target="_blank" rel="noopener noreferrer" className="underline">
+          <a href="/conditions-utilisation" target="_blank" rel="noopener noreferrer" className="underline">
             Conditions d&apos;utilisation
           </a>{" "}
           et la{" "}
-          <a href="/confidentialite" target="_blank" rel="noopener noreferrer" className="underline">
+          <a href="/politique-confidentialite" target="_blank" rel="noopener noreferrer" className="underline">
             Politique de confidentialité
           </a>
         </Label>
