@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const DUREE_GLOSSAIRE_JOURS = 60;
 
@@ -7,7 +7,8 @@ const DUREE_GLOSSAIRE_JOURS = 60;
 export async function getKnownTranslations(jeuId: string, termesAnglais: string[]) {
   if (termesAnglais.length === 0) return {};
 
-  const supabase = await createClient();
+  // Client admin (service_role) : glossaire partagé côté backend, jamais écrit depuis le navigateur d'un utilisateur
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("glossaire_termes")
     .select("terme_anglais, terme_francais")
@@ -27,7 +28,7 @@ export async function getKnownTranslations(jeuId: string, termesAnglais: string[
 
 // Enregistre une nouvelle traduction trouvée, pour que les prochains utilisateurs la réutilisent
 export async function saveGlossaryTerm(jeuId: string, termeAnglais: string, termeFrancais: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const expiration = new Date(Date.now() + DUREE_GLOSSAIRE_JOURS * 24 * 60 * 60 * 1000);
 
   const { error } = await supabase.from("glossaire_termes").insert({

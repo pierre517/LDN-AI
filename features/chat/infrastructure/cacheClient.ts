@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { TavilySearchResult } from "./tavilyClient";
 
 const DUREE_CACHE_JOURS = 30;
@@ -10,7 +10,8 @@ function normaliserQuestion(question: string) {
 
 // Cherche une recherche déjà en cache pour ce jeu et cette question, si elle n'a pas expiré
 export async function getCachedResults(jeuId: string, question: string) {
-  const supabase = await createClient();
+  // Client admin (service_role) : cache partagé côté backend, jamais écrit depuis le navigateur d'un utilisateur
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("cache_recherches")
     .select("resultats")
@@ -31,7 +32,7 @@ export async function getCachedResults(jeuId: string, question: string) {
 // Enregistre une nouvelle recherche en cache, pour que la prochaine personne posant
 // la même question sur ce jeu ne refasse pas d'appel Tavily
 export async function saveCachedResults(jeuId: string, question: string, resultats: TavilySearchResult[]) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const expiration = new Date(Date.now() + DUREE_CACHE_JOURS * 24 * 60 * 60 * 1000);
 
   const { error } = await supabase.from("cache_recherches").insert({
