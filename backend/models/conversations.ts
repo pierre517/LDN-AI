@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 
 // Crée une nouvelle conversation pour un utilisateur et un jeu donnés
-export async function createConversation(userId: string, jeuId: string) {
+export async function createConversation(userId: string, jeuId: string, consoleName: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("conversations")
-    .insert({ user_id: userId, jeu_id: jeuId })
+    .insert({ user_id: userId, jeu_id: jeuId, console: consoleName })
     .select()
     .single();
 

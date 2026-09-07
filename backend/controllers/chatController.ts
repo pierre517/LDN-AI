@@ -48,7 +48,7 @@ export async function handleChatMessage(request: NextRequest) {
     // Récupère la conversation existante, ou en crée une nouvelle si c'est le premier message
     conversation = conversationId
       ? (await withRetry(() => getConversation(conversationId, user.id), "supabase-get-conversation")).data
-      : (await withRetry(() => createConversation(user.id, game.id), "supabase-create-conversation")).data;
+      : (await withRetry(() => createConversation(user.id, game.id, consoleName), "supabase-create-conversation")).data;
   } catch {
     return Response.json({ error: "technical_error" }, { status: 503 });
   }

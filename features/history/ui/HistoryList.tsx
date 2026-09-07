@@ -34,13 +34,18 @@ export function HistoryList({ conversations }: Props) {
     <ul className="flex flex-col gap-3">
       {conversations.map((conversation) => (
         <li key={conversation.id}>
-          {/* Non cliquable pour l'instant : rouvrir une conversation existante est un autre chantier (route conversation/[id] + chargement des messages) */}
-          <Card size="sm" className="flex flex-row items-center justify-between px-4">
-            <p className="font-heading text-base">{conversation.jeuNom}</p>
-            <time dateTime={conversation.date} className="font-mono text-xs text-muted-foreground">
-              {formaterDate(conversation.date)}
-            </time>
-          </Card>
+          {/* Clic -> rouvre la conversation existante avec tout son historique (route conversation/[id]) */}
+          <Link href={`/chat/conversation/${conversation.id}`} className="block">
+            <Card
+              size="sm"
+              className="flex flex-row items-center justify-between px-4 transition hover:ring-2 hover:ring-primary/40"
+            >
+              <p className="font-heading text-base">{conversation.jeuNom}</p>
+              <time dateTime={conversation.date} className="font-mono text-xs text-muted-foreground">
+                {formaterDate(conversation.date)}
+              </time>
+            </Card>
+          </Link>
         </li>
       ))}
     </ul>
