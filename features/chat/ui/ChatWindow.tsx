@@ -13,13 +13,29 @@ type Props = {
   jeuId: string;
   gameName: string;
   console: string;
+  // Messages déjà enregistrés, fournis quand on rouvre une conversation existante (vide pour un nouveau chat)
+  initialMessages?: { id: string; role: "user" | "assistant"; contenu: string }[];
+  // Id de la conversation rouverte -> la suite des messages continue la même conversation côté serveur
+  initialConversationId?: string;
 };
 
-export function ChatWindow({ jeuId, gameName, console: consoleProp }: Props) {
-  // Mémorise l'id de conversation renvoyé par le serveur après le premier message envoyé
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+export function ChatWindow({
+  jeuId,
+  gameName,
+  console: consoleProp,
+  initialMessages,
+  initialConversationId,
+}: Props) {
+  // Démarre avec l'id existant si on rouvre une conversation, sinon undefined (le serveur en créera un au 1er message)
+  const [conversationId, setConversationId] = useState<string | undefined>(initialConversationId);
 
   const { messages, sendMessage, status, error, clearError } = useChat({
+    // Réinjecte les anciens messages au format attendu par le SDK -> la conversation retrouve tout son contexte
+    messages: initialMessages?.map((message) => ({
+      id: message.id,
+      role: message.role,
+      parts: [{ type: "text" as const, text: message.contenu }],
+    })),
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: { jeuId, console: consoleProp, conversationId },

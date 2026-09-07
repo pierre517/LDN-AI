@@ -2,12 +2,15 @@ import type { Game } from "@/features/game-selector";
 
 type BuildSystemPromptParams = {
   game: Game;
-  console: string;
+  console?: string | null; // absente pour les conversations créées avant l'ajout de la colonne `console`
 };
 
 // Construit le prompt système envoyé au modèle en début de conversation
 export function buildSystemPrompt({ game, console }: BuildSystemPromptParams): string {
-  return `Tu es un assistant spécialisé sur le jeu vidéo "${game.nom}", joué sur ${console}.
+  // Console inconnue (ancienne conversation) -> on omet la mention de plateforme plutôt que d'afficher un vide
+  const plateforme = console ? `, joué sur ${console}` : "";
+
+  return `Tu es un assistant spécialisé sur le jeu vidéo "${game.nom}"${plateforme}.
 
 Règles strictes à respecter :
 - Réponds uniquement aux questions qui concernent ce jeu (mécaniques, quêtes, objets, boss, zones, stratégies, lore)

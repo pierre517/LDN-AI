@@ -1,8 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Renvoie le nombre de requêtes déjà comptabilisées aujourd'hui pour un utilisateur (0 si aucune ligne pour ce jour)
 export async function getTodayUsageCount(userId: string, today: string) {
-  const supabase = await createClient();
+  // Client admin (service_role) : table backend, écrite/lue par le serveur, jamais par le navigateur de l'utilisateur
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("usage")
     .select("nb_requetes")
@@ -15,7 +16,7 @@ export async function getTodayUsageCount(userId: string, today: string) {
 
 // Crée la ligne du jour (1re question) ou incrémente le compteur existant
 export async function incrementTodayUsage(userId: string, today: string, currentCount: number) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   if (currentCount === 0) {
     const { error } = await supabase.from("usage").insert({ user_id: userId, date: today, nb_requetes: 1 });
