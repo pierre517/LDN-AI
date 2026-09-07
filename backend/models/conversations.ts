@@ -24,15 +24,3 @@ export async function getConversation(conversationId: string, userId: string) {
 
   return { data, error };
 }
-
-// Récupère toutes les conversations d'un utilisateur, de la plus récente à la plus ancienne (pour la page Historique)
-export async function getConversations(userId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("conversations")
-    .select("*")
-    .eq("user_id", userId) // même défense en profondeur que getConversation : jamais confiance au seul id client
-    .order("date", { ascending: false }); // false = ordre décroissant, les plus récentes en premier
-
-  return { data, error };
-}
