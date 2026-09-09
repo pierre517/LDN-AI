@@ -1,7 +1,7 @@
 "use server"; // Ce fichier ne s'exécute jamais dans le navigateur, uniquement côté serveur
 
 import { redirect } from "next/navigation";
-import { signIn, signUp } from "./auth";
+import { signIn, signUp, signOut } from "./auth";
 
 export type AuthFormState = { error: string | null };
 
@@ -41,4 +41,10 @@ export async function signupAction(_prevState: AuthFormState, formData: FormData
 
   // Confirmation email désactivée sur Supabase -> une session existe déjà, direction /chat
   redirect("/chat");
+}
+
+export async function logoutAction() {
+  // Invalide la session côté serveur (efface les cookies Supabase) — possible depuis une Server Action, pas un Server Component
+  await signOut();
+  redirect("/");
 }

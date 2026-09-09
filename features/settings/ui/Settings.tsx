@@ -1,5 +1,6 @@
 import { LogOut, Trash2, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { logoutAction } from "@/features/auth";
 import { getAccountInfo } from "../application/getAccountInfo";
 
 type Props = { userId: string; email: string };
@@ -19,21 +20,23 @@ export async function Settings({ userId, email }: Props) {
         </Card>
       </section>
 
-      {/* SESSION : bouton visuel uniquement — la déconnexion sera câblée en LDN-85 */}
+      {/* SESSION : déconnexion via Server Action (form action) — invalide la session puis redirige vers l'accueil */}
       <section className="flex flex-col gap-3">
         <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Session</h2>
         <Card size="sm" className="p-0">
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted"
-          >
-            <LogOut className="size-5 text-muted-foreground" />
-            <span className="flex flex-col">
-              <span className="text-sm font-medium">Déconnexion</span>
-              <span className="text-xs text-muted-foreground">Invalide la session en cours</span>
-            </span>
-            <ChevronRight className="ml-auto size-4 text-muted-foreground" />
-          </button>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted"
+            >
+              <LogOut className="size-5 text-muted-foreground" />
+              <span className="flex flex-col">
+                <span className="text-sm font-medium">Déconnexion</span>
+                <span className="text-xs text-muted-foreground">Invalide la session en cours</span>
+              </span>
+              <ChevronRight className="ml-auto size-4 text-muted-foreground" />
+            </button>
+          </form>
         </Card>
       </section>
 
