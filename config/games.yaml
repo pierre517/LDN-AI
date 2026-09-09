@@ -3,10 +3,12 @@ games:
     rawg_id: 326243
     nom: "Elden Ring"
     plateformes: [PS5, PS4, Xbox Series, Xbox One, PC]
+    # Domaine + préfixe de chemin supportés par Tavily includeDomains : permet de cibler
+    # la section française/du jeu d'un site, pas seulement le domaine entier
     sources:
-      - "fr.bandainamcoent.eu/elden-ring/elden-ring/elden-ring-wiki"
-      - "jeuxvideo.com/wikis-soluce-astuces/1062487/wiki-de-elden-ring.htm"
-      - "jeuxvideo.fr/guide-jeu/410523-elden-ring-notre-guide-pour-bien-debuter"
+      - "monster-soluce.com/jeux/elden-ring"
+      - "eldenring.fandom.com/fr"
+      - "fr.bandainamcoent.eu"
     statut: actif
 
   - id: skyrim
@@ -14,6 +16,7 @@ games:
     nom: "The Elder Scrolls V: Skyrim"
     plateformes: [PS5, PS4, Xbox Series, Xbox One, PC, Switch]
     sources:
-      - "elderscrolls.fandom.com/fr/wiki/Wiki_The_Elder_Scrolls/Portail/Skyrim"
-      - "jeuxvideo.com/wikis-soluce-astuces/345589/wiki-de-the-elder-scrolls-v-skyrim.htm"
+      - "elderscrolls.fandom.com/fr"
+      - "monster-soluce.com/jeux/the-elder-scrolls-v-skyrim"
+      - "supersoluce.com/soluce/elder-scrolls-v-skyrim"
     statut: actif

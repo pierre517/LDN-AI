@@ -71,11 +71,12 @@ export async function handleChatMessage(request: NextRequest) {
       system: buildSystemPrompt({ game, console: consoleName }),
       messages: modelMessages,
       tools: {
-        searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources }),
+        searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources, question: lastUserText }),
       },
-      // Sans ça, le flux s'arrête dès le premier appel d'outil — on autorise jusqu'à 3 étapes
-      // (recherche -> réponse finale, avec une marge) avant de forcer l'arrêt.
-      stopWhen: isStepCount(3),
+      // Sans ça, le flux s'arrête dès le premier appel d'outil. Le modèle (gpt-oss, raisonneur) peut
+      // enchaîner plusieurs recherches avant de rédiger : 3 étaient trop peu (il atteignait la limite
+      // avant de répondre -> réponse vide). On laisse une marge le temps qu'il produise sa réponse finale.
+      stopWhen: isStepCount(5),
       // Log serveur pour toute erreur pendant la génération (au cas où, même hors quota)
       onError: ({ error }) => {
         console.error("Erreur pendant la génération de la réponse IA :", error);

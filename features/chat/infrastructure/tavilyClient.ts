@@ -2,6 +2,9 @@ import { tavily } from "@tavily/core";
 
 const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
 const RETRY_DELAY_MS = 500;
+// Résultats volontairement compacts : ils sont réinjectés dans le contexte Groq (plafond 8K tokens/minute)
+const MAX_RESULTATS = 3;
+const MAX_CONTENU_CHARS = 800;
 
 export type TavilySearchResult = {
   titre: string;
@@ -28,13 +31,13 @@ export async function searchGameSources(query: string, sources: string[]): Promi
 async function callTavily(query: string, sources: string[]): Promise<TavilySearchResult[]> {
   const response = await client.search(query, {
     includeDomains: sources,
-    maxResults: 5,
+    maxResults: MAX_RESULTATS,
   });
 
   // On ne garde que ce dont le modèle a besoin, pas toute la réponse brute de Tavily
   return response.results.map((result) => ({
     titre: result.title,
     url: result.url,
-    contenu: result.content,
+    contenu: result.content.slice(0, MAX_CONTENU_CHARS),
   }));
 }
