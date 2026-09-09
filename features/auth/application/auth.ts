@@ -1,4 +1,4 @@
-import { signUpWithEmail, signInWithEmail, signOut as signOutInfra } from "@/features/auth/infrastructure/authClient";
+import { signUpWithEmail, signInWithEmail, signOut as signOutInfra, getCurrentUserId, deleteUserById } from "@/features/auth/infrastructure/authClient";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function signUp(email: string, password: string, pseudo: string) {
@@ -30,4 +30,21 @@ export async function signIn(email: string, password: string) {
 export async function signOut() {
   const { error } = await signOutInfra();
   return { error: error?.message ?? null };
+}
+
+// Suppression complète du compte : récupère l'id depuis la session (jamais du client),
+// supprime l'utilisateur via le client admin (cascade FK), puis efface la session.
+export async function deleteAccount() {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Session invalide" };
+
+  const { error } = await deleteUserById(userId);
+  if (error) {
+    console.error("Erreur suppression compte:", error);
+    return { error: error.message };
+  }
+
+  // Efface les cookies de session après la suppression
+  await signOutInfra();
+  return { error: null };
 }
