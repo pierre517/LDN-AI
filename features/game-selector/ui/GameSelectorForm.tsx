@@ -33,8 +33,10 @@ export function GameSelectorForm({ games }: Props) {
             <Card
               key={game.id}
               onClick={() => setSelectedGameId(game.id)}
-              className={`flex cursor-pointer flex-row items-center gap-3 p-3 ${
-                selectedGameId === game.id ? "border-primary" : ""
+              className={`flex cursor-pointer flex-row items-center gap-3 p-3 transition ${
+                selectedGameId === game.id
+                  ? "border-primary ring-2 ring-primary"
+                  : "opacity-60 hover:opacity-100"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- image externe RAWG, next/image demanderait une config de domaine en plus */}

@@ -3,9 +3,13 @@ import type { TavilySearchResult } from "./tavilyClient";
 
 const DUREE_CACHE_JOURS = 30;
 
-// Même question posée avec une casse ou des espaces différents -> même entrée de cache
+// Même question posée avec une casse, une ponctuation ou des espaces différents -> même entrée de cache
 function normaliserQuestion(question: string) {
-  return question.trim().toLowerCase();
+  return question
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "") // retire la ponctuation, garde lettres (accents inclus) et chiffres
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Cherche une recherche déjà en cache pour ce jeu et cette question, si elle n'a pas expiré
