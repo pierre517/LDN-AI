@@ -27,7 +27,7 @@ export function GameSelectorForm({ games }: Props) {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h2 className="font-heading text-lg">Jeu</h2>
+        <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Jeu</h2>
         <div className="mt-3 flex flex-col gap-2">
           {games.map((game) => (
             <Card
@@ -55,7 +55,7 @@ export function GameSelectorForm({ games }: Props) {
       </section>
 
       <section>
-        <h2 className="font-heading text-lg">Console</h2>
+        <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Console</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {selectedGame?.plateformes.map((plateforme) => (
             <Button
