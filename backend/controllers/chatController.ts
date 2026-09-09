@@ -17,8 +17,6 @@ import {
   streamChatWithFallback,
   buildSystemPrompt,
   createSearchGameWikiTool,
-  createTranslateTermsTool,
-  createSaveTranslationsTool,
 } from "@/features/chat";
 
 // Toute la logique métier du chat vit ici — route.ts se contente de retourner ce que cette fonction renvoie
@@ -68,12 +66,10 @@ export async function handleChatMessage(request: NextRequest) {
       messages: modelMessages,
       tools: {
         searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources }),
-        translateTerms: createTranslateTermsTool({ jeuId: game.id, gameName: game.nom }),
-        saveTranslations: createSaveTranslationsTool({ jeuId: game.id }),
       },
-      // Sans ça, le flux s'arrête dès le premier appel d'outil — on autorise jusqu'à 5 étapes
-      // (recherche -> traduction -> sauvegarde -> réponse finale) avant de forcer l'arrêt.
-      stopWhen: isStepCount(5),
+      // Sans ça, le flux s'arrête dès le premier appel d'outil — on autorise jusqu'à 3 étapes
+      // (recherche -> réponse finale, avec une marge) avant de forcer l'arrêt.
+      stopWhen: isStepCount(3),
       // Log serveur pour toute erreur pendant la génération (au cas où, même hors quota)
       onError: ({ error }) => {
         console.error("Erreur pendant la génération de la réponse IA :", error);
