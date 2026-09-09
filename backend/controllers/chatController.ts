@@ -82,11 +82,34 @@ export async function handleChatMessage(request: NextRequest) {
       // enchaîner plusieurs recherches avant de rédiger : 3 étaient trop peu (il atteignait la limite
       // avant de répondre -> réponse vide). On laisse une marge le temps qu'il produise sa réponse finale.
       stopWhen: isStepCount(5),
-      // Dès qu'une recherche a eu lieu, on interdit tout nouvel appel d'outil : la seule action
-      // possible devient rédiger la réponse -> plus de bulle vide quand le modèle s'entête à rechercher
-      prepareStep: ({ steps }) => {
+      // Dès qu'une recherche a eu lieu, l'étape suivante ne sert qu'à rédiger la réponse.
+      // gpt-oss ré-appelle l'outil tant qu'il en voit des traces (même avec tool_choice "none",
+      // d'où les 400 Groq) : on lui envoie donc une conversation 100% texte, sans outil déclaré
+      // ni trace d'appel, avec les résultats réinjectés en message utilisateur.
+      prepareStep: ({ steps, messages }) => {
         const rechercheDejaFaite = steps.some((step) => step.toolCalls.length > 0);
-        return rechercheDejaFaite ? { toolChoice: "none" } : {};
+        if (!rechercheDejaFaite) return {};
+
+        const resultats = steps.flatMap((step) => step.toolResults.map((r) => JSON.stringify(r.output)));
+        // Retire les messages d'appel d'outil (assistant) et de résultat d'outil (tool) de l'historique
+        const messagesSansTracesOutil = messages.filter((message) => {
+          if (message.role === "tool") return false;
+          if (message.role === "assistant" && Array.isArray(message.content)) {
+            return !message.content.some((part) => part.type === "tool-call");
+          }
+          return true;
+        });
+
+        return {
+          activeTools: [],
+          messages: [
+            ...messagesSansTracesOutil,
+            {
+              role: "user" as const,
+              content: `Résultats de la recherche :\n${resultats.join("\n")}\n\nRédige maintenant ta réponse à ma question en te basant uniquement sur ces résultats.`,
+            },
+          ],
+        };
       },
       // Log serveur pour toute erreur pendant la génération (au cas où, même hors quota)
       onError: ({ error }) => {
