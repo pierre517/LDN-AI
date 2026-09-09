@@ -5,7 +5,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-10 bg-background px-4 py-16 text-foreground">
       {/* Vitrine : présentation rapide de l'outil, visible même sans compte */}
       <div className="flex max-w-md flex-col items-center gap-3 text-center">
-        <h1 className="font-heading text-4xl">LDN·AI</h1>
+        <h1 className="font-heading text-4xl md:text-5xl">LDN·AI</h1>
         <p className="font-sans text-muted-foreground">
           Pose tes questions sur ton jeux, sans spoil, avec les noms officiels en français.
         </p>

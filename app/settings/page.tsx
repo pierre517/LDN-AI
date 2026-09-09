@@ -15,7 +15,7 @@ export default async function SettingsPage() {
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-10">
         <div className="flex flex-col gap-1">
           <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Compte</p>
-          <h1 className="font-heading text-2xl">Paramètres</h1>
+          <h1 className="font-heading text-2xl md:text-3xl">Paramètres</h1>
         </div>
         <Settings userId={user.id} email={user.email} />
         {/* mt-auto : colle le footer en bas même quand le contenu est court */}

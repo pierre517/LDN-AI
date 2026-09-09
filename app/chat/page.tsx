@@ -12,7 +12,7 @@ export default async function NouveauChatPage() {
     <div className="flex min-h-screen flex-col text-foreground">
       <Header />
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-4 py-10">
-        <h1 className="font-heading text-2xl">Nouveau chat</h1>
+        <h1 className="font-heading text-2xl md:text-3xl">Nouveau chat</h1>
         <GameSelector />
       </main>
     </div>
