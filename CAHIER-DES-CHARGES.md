@@ -4,7 +4,7 @@ Ce document sert de référence pour la documentation du projet et pour tout ass
 
 ## 1. Contexte et besoin
 
-Les soluces et informations précises sur un jeu vidéo sont dispersées entre wikis communautaires, forums et vidéos, ce qui rend la recherche d'une information précise longue et parfois infructueuse. Les assistants IA généralistes existants peuvent répondre à ce type de question, mais approfondissent peu leurs recherches (lecture de résumés plutôt que du contenu complet des pages) et peuvent halluciner des réponses plausibles mais fausses sur des détails précis. S'ajoute à ça un problème de langue : la majorité des sources communautaires sont en anglais, alors que le jeu est souvent joué dans une version localisée (français ici) — or les noms d'objets, de boss, de lieux ou de PNJ ne sont pas toujours de simples traductions littérales entre les deux langues. Une réponse qui reprend le nom anglais, ou une traduction approximative, peut ne correspondre à rien dans ce que le joueur voit réellement à l'écran.
+Les soluces et informations précises sur un jeu vidéo sont dispersées entre wikis communautaires, forums et vidéos, ce qui rend la recherche d'une information précise longue et parfois infructueuse. Les assistants IA généralistes existants peuvent répondre à ce type de question, mais approfondissent peu leurs recherches (lecture de résumés plutôt que du contenu complet des pages) et peuvent halluciner des réponses plausibles mais fausses sur des détails précis. S'ajoute à ça un enjeu de langue : le jeu est souvent joué dans une version localisée (français ici), et une réponse qui reprend des noms anglais peut ne correspondre à rien dans ce que le joueur voit réellement à l'écran. La réponse doit donc utiliser les noms officiels français — ce que l'on obtient en ciblant directement des sources communautaires francophones pour chaque jeu.
 
 ## 2. Objectif
 
@@ -55,7 +55,7 @@ Fonctionnalité officielle de l'application, accessible depuis Paramètres. Comp
 2. **Suppression complète des données personnelles** associées au compte — `auth.users`, `profiles`, `conversations`, `messages` — conformément au droit à l'effacement RGPD (section 14)
 3. **Déconnexion immédiate** et redirection vers la page d'accueil
 
-Ce qui n'est **pas** supprimé : `cache_recherches` et `glossaire_termes` restent intacts — ces tables ne contiennent aucune donnée personnelle (indexées par jeu et par question/terme, jamais par utilisateur), donc rien à effacer côté RGPD, et ça évite de perdre un cache utile à tous les autres utilisateurs pour une suppression qui ne les concerne pas.
+Ce qui n'est **pas** supprimé : `cache_recherches` reste intacte — cette table ne contient aucune donnée personnelle (indexée par jeu et par question, jamais par utilisateur), donc rien à effacer côté RGPD, et ça évite de perdre un cache utile à tous les autres utilisateurs pour une suppression qui ne les concerne pas.
 
 Implication technique : pour que la suppression soit complète et fiable, les clés étrangères `conversations.user_id` et `messages.conversation_id` doivent être configurées en cascade (`ON DELETE CASCADE`) au niveau de la base — la suppression du compte entraîne alors automatiquement celle des conversations et messages associés, sans étape manuelle oubliable côté code.
 
@@ -153,9 +153,8 @@ Séquence :
 2. Vérification en amont : le prompt système vérifie que la question porte sur le jeu sélectionné ; si elle est hors sujet, le modèle redirige poliment sans chercher (voir section 13, recadrage)
 3. Pour une question sur le jeu, le modèle formule la requête de recherche optimale et la demande (tool calling de l'AI SDK)
 4. Le backend exécute réellement la recherche demandée, restreinte aux sources du jeu actif
-5. Le modèle identifie les noms propres présents dans les résultats et vérifie/complète leur traduction française (voir 10.4)
-6. Le modèle rédige la réponse finale, en français, avec les noms officiels du jeu
-7. La réponse est streamée à l'utilisateur
+5. Le modèle rédige la réponse finale, en français, avec les noms officiels du jeu tels qu'ils apparaissent dans les sources francophones
+6. La réponse est streamée à l'utilisateur
 
 ### 10.2 Trois mémoires distinctes
 
@@ -168,20 +167,6 @@ Séquence :
 ### 10.3 Cache des recherches
 
 Pour économiser le quota Tavily (partagé entre tous les utilisateurs), les résultats de recherche bruts sont mis en cache dans Supabase (table `cache_recherches`), indexés par jeu + question normalisée, avec une expiration de 30 jours. On cache les résultats de recherche, jamais la réponse finale du modèle, qui reste propre à chaque conversation.
-
-### 10.4 Traduction des noms propres (objets, boss, lieux, PNJ)
-
-Problème : les sources (en anglais) et le jeu en version française n'utilisent pas toujours les mêmes noms — pas une simple traduction littérale, parfois un nom complètement différent (ex : "Radahn's Greatsword" pourrait devenir "l'épée du général" en français, sans lien évident avec le nom anglais). Un glossaire pré-rempli à la main n'est pas réaliste : trop de termes par jeu, et ça ne passe pas à l'échelle pour le multi-jeu.
-
-Solution retenue : traduction systématique, avec mise en cache automatique dans une table dédiée.
-
-1. Après la recherche principale, le modèle identifie les noms propres présents dans les résultats
-2. Pour chaque nom, vérification dans `glossaire_termes` (voir section 12) — si déjà connu pour ce jeu, réutilisation immédiate, aucune nouvelle recherche
-3. Pour les noms encore inconnus, une seule recherche Tavily groupée (tous les noms de la réponse en cours, pas un appel par nom) pour trouver leurs équivalents français
-4. Les nouvelles correspondances trouvées sont ajoutées à `glossaire_termes`, réutilisables pour tous les utilisateurs suivants
-5. Si aucune source française fiable n'est trouvée, le modèle utilise le nom anglais dans sa réponse plutôt que d'inventer une traduction
-
-Le coût réel (recherche + tokens) n'est payé qu'une fois par terme et par jeu tant que l'entrée reste valide — la première personne qui pose une question sur un boss "paie" la traduction, tout le monde après en profite gratuitement via le cache. Les noms officiels peuvent toutefois changer avec le temps (un patch peut renommer un objet ou un lieu) : `glossaire_termes` expire donc aussi, avec une durée plus longue que `cache_recherches` (60 jours plutôt que 30), un renommage restant nettement plus rare qu'une mise à jour de stratégie ou d'équilibrage.
 
 ## 11. Gestion multi-jeux
 
@@ -216,7 +201,7 @@ Aucune des deux features ne "possède" ce fichier : il vit dans un dossier neutr
 
 RAWG fournit les métadonnées du jeu (nom, plateformes, jaquette) pour l'autocomplete ; il ne connaît pas les sources communautaires, qui restent maintenues manuellement et reliées par `rawg_id`.
 
-La traduction des noms propres (section 10.4) ne demande aucune configuration supplémentaire par jeu : le glossaire `glossaire_termes` se construit automatiquement à l'usage, pour n'importe quel jeu ajouté.
+Les sources configurées par jeu (`sources`) doivent être **francophones** : c'est ce qui garantit que les réponses reprennent les noms officiels français du jeu, sans étape de traduction supplémentaire.
 
 ## 12. Base de données (Supabase)
 
@@ -228,7 +213,6 @@ La traduction des noms propres (section 10.4) ne demande aucune configuration su
 | `messages` | id, conversation_id (FK), rôle (user/assistant), contenu, date | `application/chat` |
 | `usage` | user_id (FK), date, nombre de requêtes | middleware quota |
 | `cache_recherches` | jeu_id (slug, texte libre), question normalisée, résultats Tavily, date, expiration (30 jours) | `infrastructure/cacheClient` |
-| `glossaire_termes` | jeu_id (slug, texte libre), terme_anglais, terme_français, date_ajout, expiration (60 jours) | `infrastructure/glossaryClient` |
 
 **`auth.users` vs `profiles`** : Supabase gère nativement une table `auth.users` avec l'email et le mot de passe hashé — on ne la crée pas et on n'y touche jamais directement dans le code. Pour stocker des champs propres à l'appli (pseudo...), on crée notre propre table `profiles` dans le schéma public, reliée à `auth.users` par une clé étrangère sur son id.
 
@@ -244,7 +228,7 @@ Ce qui n'est jamais stocké en base : le contenu complet des wikis (récupéré 
 
 - Compte obligatoire, aucune fonctionnalité en anonyme
 - **Autorisation** : un utilisateur ne peut lire ou modifier que ses propres conversations et messages — toute route qui retourne une conversation doit vérifier que `conversation.user_id` correspond à l'utilisateur authentifié de la requête, jamais se fier uniquement à un id transmis par le client
-- Quota de requêtes/jour par utilisateur (table `usage`), pour protéger le quota gratuit partagé Groq/Tavily — une question peut déclencher jusqu'à deux appels Tavily (recherche principale + traduction si nécessaire), atténué dans la durée par les caches `cache_recherches` et `glossaire_termes`
+- Quota de requêtes/jour par utilisateur (table `usage`), pour protéger le quota gratuit partagé Groq/Tavily — une question déclenche un appel Tavily (recherche principale), atténué dans la durée par le cache `cache_recherches`
 - Clés API (Groq, Tavily, RAWG, Supabase service role) jamais exposées côté client, uniquement en variables d'environnement backend
 - Recadrage automatique : le prompt système impose au modèle de rediriger poliment toute question hors du contexte du jeu sélectionné plutôt que d'y répondre (voir 10.1) — protège l'expérience et le quota partagé contre un usage détourné en chatbot généraliste
 - Mots de passe : hashage bcrypt + salage aléatoire géré nativement par Supabase Auth, aucune implémentation custom ; règles configurées dans Supabase : minimum 8 caractères, au moins une majuscule, une minuscule, un chiffre et un caractère spécial
@@ -254,7 +238,6 @@ Ce qui n'est jamais stocké en base : le contenu complet des wikis (récupéré 
 
 - **Erreur technique** (Groq, Tavily ou Supabase injoignable) : une nouvelle tentative automatique après un court délai, puis un message générique si ça persiste ("un souci technique est survenu, réessaie dans quelques instants") — jamais de détail technique brut affiché à l'utilisateur
 - **Quota atteint** : ce n'est pas un bug, message explicite et différent ("tu as atteint ta limite de questions pour aujourd'hui")
-- **Échec partiel** (la recherche de traduction du 10.4 échoue, mais la recherche principale a réussi) : la réponse part quand même, avec les noms anglais bruts plutôt que d'annuler toute la réponse pour un problème secondaire
 - **Erreur en plein streaming** : le flux s'arrête, un message d'erreur s'ajoute à la suite de ce qui a déjà été généré — pas de perte du texte déjà affiché
 - **Journalisation** : les erreurs sont loguées côté serveur (logs Vercel, suffisant pour un V1) pour pouvoir déboguer après coup
 

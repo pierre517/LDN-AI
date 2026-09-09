@@ -3,5 +3,3 @@ export { ChatWindow } from "./ui/ChatWindow";
 export { streamChatWithFallback } from "./infrastructure/groqClient";
 export { buildSystemPrompt } from "./application/buildSystemPrompt";
 export { createSearchGameWikiTool } from "./application/searchTool";
-export { createTranslateTermsTool } from "./application/translateTermsTool";
-export { createSaveTranslationsTool } from "./application/saveTranslationsTool";
