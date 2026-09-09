@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { signIn, signUp, signOut, deleteAccount } from "./auth";
+import { isApprovedEmail } from "./access";
 
 export type AuthFormState = { error: string | null };
 
@@ -12,8 +13,8 @@ export async function loginAction(_prevState: AuthFormState, formData: FormData)
   const result = await signIn(email, password);
   if (result.error) return { error: result.error };
 
-  // Connexion réussie -> direction la sélection du jeu/console, avant de démarrer un chat
-  redirect("/chat");
+  // Phase de test : seuls les emails approuvés accèdent à l'appli, les autres passent par la waitlist
+  redirect(isApprovedEmail(email) ? "/chat" : "/waitlist");
 }
 
 export async function signupAction(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -39,12 +40,21 @@ export async function signupAction(_prevState: AuthFormState, formData: FormData
   const result = await signUp(email, password, pseudo);
   if (result.error) return { error: result.error };
 
-  // Confirmation email désactivée sur Supabase -> une session existe déjà, direction /chat
-  redirect("/chat");
+  // Confirmation email désactivée sur Supabase -> une session existe déjà.
+  // Phase de test : un nouvel inscrit n'est presque jamais dans la liste blanche -> waitlist.
+  // ?inscription=1 -> la page waitlist montre le choix garder/supprimer (décision unique à l'inscription).
+  redirect(isApprovedEmail(email) ? "/chat" : "/waitlist?inscription=1");
 }
 
 export async function logoutAction() {
   // Invalide la session côté serveur (efface les cookies Supabase) — possible depuis une Server Action, pas un Server Component
+  await signOut();
+  redirect("/");
+}
+
+// Bouton vert de la waitlist : l'utilisateur veut garder ses données (on ne supprime rien).
+// On le déconnecte simplement et on le renvoie à l'accueil ; son compte reste en base pour un futur contact.
+export async function keepAccountAction() {
   await signOut();
   redirect("/");
 }
