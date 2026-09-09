@@ -1,6 +1,7 @@
 "use client";
 
 import { TriangleAlert, Trash2, ChevronRight } from "lucide-react";
+import { deleteAccountAction } from "@/features/auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,8 +50,12 @@ export function DeleteAccountDialog() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Annuler</AlertDialogCancel>
-          {/* Bouton non câblé pour l'instant : la suppression sera branchée dessus en LDN-88 */}
-          <AlertDialogAction variant="destructive">Supprimer</AlertDialogAction>
+          {/* form action : la suppression passe par une Server Action (id pris côté serveur, jamais du client) */}
+          <form action={deleteAccountAction} className="contents">
+            <AlertDialogAction type="submit" variant="destructive">
+              Supprimer
+            </AlertDialogAction>
+          </form>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

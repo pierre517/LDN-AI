@@ -1,7 +1,7 @@
 "use server"; // Ce fichier ne s'exécute jamais dans le navigateur, uniquement côté serveur
 
 import { redirect } from "next/navigation";
-import { signIn, signUp, signOut } from "./auth";
+import { signIn, signUp, signOut, deleteAccount } from "./auth";
 
 export type AuthFormState = { error: string | null };
 
@@ -46,5 +46,15 @@ export async function signupAction(_prevState: AuthFormState, formData: FormData
 export async function logoutAction() {
   // Invalide la session côté serveur (efface les cookies Supabase) — possible depuis une Server Action, pas un Server Component
   await signOut();
+  redirect("/");
+}
+
+export async function deleteAccountAction() {
+  const { error } = await deleteAccount();
+  // Échec rare : on logue côté serveur et on reste sur la page (le dialog ne peut pas afficher d'erreur après navigation)
+  if (error) {
+    console.error("Échec suppression de compte:", error);
+    return;
+  }
   redirect("/");
 }

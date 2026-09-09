@@ -241,6 +241,15 @@ Ce qui n'est jamais stocké en base : le contenu complet des wikis (récupéré 
 - **Erreur en plein streaming** : le flux s'arrête, un message d'erreur s'ajoute à la suite de ce qui a déjà été généré — pas de perte du texte déjà affiché
 - **Journalisation** : les erreurs sont loguées côté serveur (logs Vercel, suffisant pour un V1) pour pouvoir déboguer après coup
 
+### 13.2 Les deux clients Supabase (utilisateur connecté vs admin)
+
+Le code parle à Supabase avec **deux clients distincts**, à ne pas confondre :
+
+- **Client « utilisateur connecté »** (`lib/supabase/server.ts`) : se connecte au nom de l'utilisateur de la session (via ses cookies). Il est **soumis à la RLS** — il ne peut donc lire ou écrire que les lignes autorisées pour cet utilisateur (ses propres conversations, son profil...). C'est le client par défaut pour toute donnée personnelle.
+- **Client « admin »** (`lib/supabase/admin.ts`) : utilise la clé secrète `service_role`, qui **contourne la RLS** (accès total). Réservé aux opérations backend qui n'appartiennent à aucun utilisateur en particulier : écriture du cache de recherche partagé (`cache_recherches`), du compteur de quota (`usage`), ou suppression d'un compte (`auth.admin.deleteUser`). **Cette clé ne doit jamais atteindre le navigateur** — elle vit uniquement en variable d'environnement backend.
+
+**Pourquoi le client admin désactive la persistance de session** : par défaut, un client Supabase est pensé pour un navigateur avec un utilisateur connecté — il sauvegarde la session dans le stockage (`persistSession`) et rafraîchit son token en tâche de fond (`autoRefreshToken`). Le client admin n'est **pas** une session utilisateur : c'est une clé serveur créée puis jetée à chaque requête. On désactive donc ces deux options (`{ auth: { autoRefreshToken: false, persistSession: false } }`) — rien à persister, aucun token à rafraîchir. C'est la recommandation de la doc Supabase pour un usage admin côté serveur.
+
 ## 14. Conformité et mentions légales
 
 Le projet collecte des données personnelles (email via Supabase Auth, historique des conversations) et utilise des services tiers qui traitent ces données ou les requêtes (Groq, OpenRouter, Tavily, RAWG, Supabase, Vercel). Deux pages sont nécessaires avant une mise en production réelle :
