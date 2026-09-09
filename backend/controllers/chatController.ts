@@ -71,7 +71,12 @@ export async function handleChatMessage(request: NextRequest) {
       system: buildSystemPrompt({ game, console: consoleName }),
       messages: modelMessages,
       tools: {
-        searchGameWiki: createSearchGameWikiTool({ jeuId: game.id, sources: game.sources, question: lastUserText }),
+        searchGameWiki: createSearchGameWikiTool({
+          jeuId: game.id,
+          jeuNom: game.nom,
+          sources: game.sources,
+          question: lastUserText,
+        }),
       },
       // Sans ça, le flux s'arrête dès le premier appel d'outil. Le modèle (gpt-oss, raisonneur) peut
       // enchaîner plusieurs recherches avant de rédiger : 3 étaient trop peu (il atteignait la limite
