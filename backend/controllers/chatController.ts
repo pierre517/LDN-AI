@@ -77,12 +77,20 @@ export async function handleChatMessage(request: NextRequest) {
       // enchaîner plusieurs recherches avant de rédiger : 3 étaient trop peu (il atteignait la limite
       // avant de répondre -> réponse vide). On laisse une marge le temps qu'il produise sa réponse finale.
       stopWhen: isStepCount(5),
+      // Dès qu'une recherche a eu lieu, on interdit tout nouvel appel d'outil : la seule action
+      // possible devient rédiger la réponse -> plus de bulle vide quand le modèle s'entête à rechercher
+      prepareStep: ({ steps }) => {
+        const rechercheDejaFaite = steps.some((step) => step.toolCalls.length > 0);
+        return rechercheDejaFaite ? { toolChoice: "none" } : {};
+      },
       // Log serveur pour toute erreur pendant la génération (au cas où, même hors quota)
       onError: ({ error }) => {
         console.error("Erreur pendant la génération de la réponse IA :", error);
       },
       // Une fois le flux terminé, on enregistre la réponse complète de l'IA
-      onFinish: async ({ text }) => {
+      onFinish: async ({ text, finishReason, steps }) => {
+        // Log de diagnostic : "tool-calls" + texte vide = le modèle a épuisé ses étapes sans rédiger
+        console.log("Chat terminé :", { finishReason, steps: steps.length, longueurTexte: text.length });
         await addMessage(conversation.id, "assistant", text);
       },
     }),

@@ -30,12 +30,19 @@ export async function getCachedResults(jeuId: string, question: string) {
   }
   if (!data) return null; // cache miss normal, rien à logger
 
-  return data.resultats as TavilySearchResult[];
+  const resultats = data.resultats as TavilySearchResult[];
+  // Une vieille entrée vide (recherche ratée cachée par erreur) ne doit pas bloquer la question 30 jours
+  if (resultats.length === 0) return null;
+
+  return resultats;
 }
 
 // Enregistre une nouvelle recherche en cache, pour que la prochaine personne posant
 // la même question sur ce jeu ne refasse pas d'appel Tavily
 export async function saveCachedResults(jeuId: string, question: string, resultats: TavilySearchResult[]) {
+  // Jamais de résultat vide en cache : ça resservirait "rien" pendant 30 jours pour cette question
+  if (resultats.length === 0) return { error: null };
+
   const supabase = createAdminClient();
   const expiration = new Date(Date.now() + DUREE_CACHE_JOURS * 24 * 60 * 60 * 1000);
 

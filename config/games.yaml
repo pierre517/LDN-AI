@@ -6,9 +6,8 @@ games:
     # Domaine + préfixe de chemin supportés par Tavily includeDomains : permet de cibler
     # la section française/du jeu d'un site, pas seulement le domaine entier
     sources:
-      - "monster-soluce.com/jeux/elden-ring"
-      - "eldenring.fandom.com/fr"
-      - "fr.bandainamcoent.eu"
+      - "fr.bandainamcoent.eu/elden-ring"
+      - "jeuxvideo.com/wikis-soluce-astuces"
     statut: actif
 
   - id: skyrim

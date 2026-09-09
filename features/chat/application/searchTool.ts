@@ -11,6 +11,7 @@ export function createSearchGameWikiTool({ jeuId, sources, question }: Params) {
   // Une recherche interroge déjà toutes les sources d'un coup : une seule suffit par question.
   // Sans ce verrou, le modèle peut relancer l'outil en boucle et faire exploser les tokens Groq.
   let rechercheEffectuee = false;
+  let nbResultats = 0;
 
   return tool({
     description:
@@ -23,18 +24,30 @@ export function createSearchGameWikiTool({ jeuId, sources, question }: Params) {
     // C'est toujours notre code qui exécute la recherche, jamais le modèle lui-même (section 10.1 du cahier des charges)
     execute: async ({ query }) => {
       if (rechercheEffectuee) {
-        return { info: "Recherche déjà effectuée : rédige ta réponse avec les résultats déjà fournis." };
+        // Message adapté selon ce que la recherche avait donné, pour ne pas promettre des résultats inexistants.
+        // Jamais d'invitation à puiser dans son propre savoir : les réponses viennent des sources, point.
+        return nbResultats > 0
+          ? { info: "Recherche déjà effectuée : rédige ta réponse avec les résultats déjà fournis." }
+          : {
+            info: "La recherche n'a rien donné : indique simplement à l'utilisateur que tu n'as pas trouvé l'information dans les sources, sans répondre avec tes propres connaissances.",
+          };
       }
       rechercheEffectuee = true;
 
       // Clé de cache = question d'origine de l'utilisateur (stable d'une fois sur l'autre),
       // pas la reformulation du modèle (qui change à chaque appel -> cache quasi jamais réutilisé)
       const cache = await getCachedResults(jeuId, question);
-      if (cache) return { resultats: cache };
+      if (cache) {
+        nbResultats = cache.length;
+        console.log(`searchGameWiki: ${cache.length} résultat(s) depuis le cache pour "${query}"`);
+        return { resultats: cache };
+      }
 
       try {
         const resultats = await searchGameSources(query, sources);
         await saveCachedResults(jeuId, question, resultats);
+        nbResultats = resultats.length;
+        console.log(`searchGameWiki: ${resultats.length} résultat(s) depuis Tavily pour "${query}"`);
         return { resultats };
       } catch {
         // Tavily indisponible malgré le retry interne -> pas de plantage du flux en cours (LDN-78 gère le
