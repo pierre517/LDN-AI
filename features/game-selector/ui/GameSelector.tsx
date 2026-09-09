@@ -7,10 +7,16 @@ export async function GameSelector() {
   const games = await Promise.all(
     getGames()
       .filter((game) => game.statut === "actif")
-      .map(async (game) => ({
-        ...game,
-        ...(await getGameDetails(game.rawgId)),
-      }))
+      .map(async (game) => {
+        // RAWG isolé par jeu : si l'appel échoue (rawg_id faux, RAWG injoignable),
+        // on affiche quand même le jeu sans jaquette plutôt que de casser toute la page
+        try {
+          return { ...game, ...(await getGameDetails(game.rawgId)) };
+        } catch (error) {
+          console.error(`RAWG indisponible pour ${game.id} (rawg_id ${game.rawgId}) :`, error);
+          return { ...game, image: null, studio: null, annee: null };
+        }
+      })
   );
 
   return <GameSelectorForm games={games} />;
