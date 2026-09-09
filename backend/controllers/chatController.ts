@@ -13,6 +13,7 @@ import { withRetry } from "@/backend/middleware/errors";
 import { createConversation, getConversation } from "@/backend/models/conversations";
 import { addMessage } from "@/backend/models/messages";
 import { validateGameId } from "@/features/game-selector";
+import { isApprovedEmail } from "@/features/auth";
 import {
   streamChatWithFallback,
   buildSystemPrompt,
@@ -30,6 +31,11 @@ export async function handleChatMessage(request: NextRequest) {
 
   const user = await requireUser();
   if (!user) return new Response("Non authentifié", { status: 401 });
+
+  // Phase de test : filet anti-quota — un compte non approuvé ne peut déclencher aucun appel Groq/Tavily
+  if (!isApprovedEmail(user.email)) {
+    return new Response("Accès non autorisé", { status: 403 });
+  }
 
   const allowed = await enforceQuota(user.id);
   if (!allowed) {
