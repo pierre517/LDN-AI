@@ -8,6 +8,10 @@ type Params = { jeuId: string; sources: string[]; question: string };
 // Fabrique l'outil pour une conversation donnée : jeuId/sources/question dépendent de la requête
 // en cours, on ne peut donc pas les coder en dur dans un objet tool() statique.
 export function createSearchGameWikiTool({ jeuId, sources, question }: Params) {
+  // Une recherche interroge déjà toutes les sources d'un coup : une seule suffit par question.
+  // Sans ce verrou, le modèle peut relancer l'outil en boucle et faire exploser les tokens Groq.
+  let rechercheEffectuee = false;
+
   return tool({
     description:
       "Recherche des informations sur le jeu dans les sources communautaires (wikis, forums) pour répondre à la question de l'utilisateur.",
@@ -18,6 +22,11 @@ export function createSearchGameWikiTool({ jeuId, sources, question }: Params) {
     }),
     // C'est toujours notre code qui exécute la recherche, jamais le modèle lui-même (section 10.1 du cahier des charges)
     execute: async ({ query }) => {
+      if (rechercheEffectuee) {
+        return { info: "Recherche déjà effectuée : rédige ta réponse avec les résultats déjà fournis." };
+      }
+      rechercheEffectuee = true;
+
       // Clé de cache = question d'origine de l'utilisateur (stable d'une fois sur l'autre),
       // pas la reformulation du modèle (qui change à chaque appel -> cache quasi jamais réutilisé)
       const cache = await getCachedResults(jeuId, question);
