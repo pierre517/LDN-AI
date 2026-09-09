@@ -1,4 +1,4 @@
-# LDN·IA
+# LDN·AI
 
 **Pour plus de détails, consultez le fichier "cahier des charges.md à la racine du repo**
 
