@@ -1,7 +1,8 @@
-import { LogOut, Trash2, ChevronRight } from "lucide-react";
+import { LogOut, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { logoutAction } from "@/features/auth";
 import { getAccountInfo } from "../application/getAccountInfo";
+import { DeleteAccountDialog } from "./DeleteAccountDialog";
 
 type Props = { userId: string; email: string };
 
@@ -40,21 +41,11 @@ export async function Settings({ userId, email }: Props) {
         </Card>
       </section>
 
-      {/* ZONE DE DANGER : bouton visuel uniquement — la suppression sera câblée en LDN-86 */}
+      {/* ZONE DE DANGER : ligne + dialog de confirmation (LDN-87) ; la suppression réelle sera câblée en LDN-88 */}
       <section className="flex flex-col gap-3">
         <h2 className="font-mono text-xs uppercase tracking-wide text-destructive">Zone de danger</h2>
         <Card size="sm" className="p-0 ring-destructive/30">
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 px-4 py-3 text-left text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="size-5" />
-            <span className="flex flex-col">
-              <span className="text-sm font-medium">Supprimer mon compte</span>
-              <span className="text-xs text-destructive/80">Suppression définitive de toutes vos données</span>
-            </span>
-            <ChevronRight className="ml-auto size-4" />
-          </button>
+          <DeleteAccountDialog />
         </Card>
       </section>
     </div>
