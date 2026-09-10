@@ -20,12 +20,18 @@ export async function loginAction(_prevState: AuthFormState, formData: FormData)
 export async function signupAction(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const passwordConfirm = formData.get("passwordConfirm") as string;
   const pseudo = formData.get("pseudo") as string;
   const cgu = formData.get("cgu");
 
   // Case CGU non cochée -> "cgu" est absent du formData (une case non cochée n'envoie rien)
   if (!cgu) {
     return { error: "Tu dois accepter les CGU pour t'inscrire." };
+  }
+
+  // Les deux saisies doivent être identiques (vérif de confort, évite une faute de frappe)
+  if (password !== passwordConfirm) {
+    return { error: "Les deux mots de passe ne correspondent pas." };
   }
 
   // Contrôle de confort côté UI seulement ; la vraie règle est imposée par Supabase (dashboard Auth)
