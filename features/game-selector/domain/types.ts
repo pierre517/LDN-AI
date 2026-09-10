@@ -5,6 +5,8 @@ export type Game = {
   plateformes: string[];
   // Domaines communautaires autorisés pour la recherche Tavily de ce jeu (LDN-67)
   sources: string[];
+  // Nom du fichier de glossaire EN->FR dans config/glossaires/ (absent = pas de pipeline traduction)
+  glossaire?: string;
   statut: "actif" | "inactif";
 };
 
