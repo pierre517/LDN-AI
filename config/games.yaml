@@ -8,6 +8,9 @@ games:
     sources:
       - "fr.bandainamcoent.eu/elden-ring"
       - "jeuxvideo.com/wikis-soluce-astuces"
+    # Fichier de config/glossaires/ : paires EN->FR officielles extraites du jeu.
+    # Sa présence activera le pipeline "sources EN + traduction" (jeu sans glossaire = flux actuel)
+    glossaire: "elden-ring.json"
     statut: actif
 
   - id: skyrim
