@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { useState } from "react";
 import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
@@ -31,7 +31,7 @@ export function ChatWindow({
 
   const { messages, sendMessage, status, error, clearError } = useChat({
     // Réinjecte les anciens messages au format attendu par le SDK -> la conversation retrouve tout son contexte
-    messages: initialMessages?.map((message) => ({
+    messages: initialMessages?.map((message): UIMessage => ({
       id: message.id,
       role: message.role,
       parts: [{ type: "text" as const, text: message.contenu }],
