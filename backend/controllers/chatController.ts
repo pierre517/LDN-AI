@@ -76,6 +76,8 @@ export async function handleChatMessage(request: NextRequest) {
           jeuNom: game.nom,
           sources: game.sources,
           question: lastUserText,
+          // Jeu avec glossaire -> sources et requêtes en anglais (pipeline traduction)
+          langue: game.glossaire ? "en" : "fr",
         }),
       },
       // Sans ça, le flux s'arrête dès le premier appel d'outil. Le modèle (gpt-oss, raisonneur) peut
