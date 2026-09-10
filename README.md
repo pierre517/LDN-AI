@@ -2,19 +2,18 @@
 
 **Pour plus de détails, consultez le fichier "cahier des charges.md à la racine du repo**
 
-**Un assistant IA qui répond à tes questions sur un jeu vidéo précis, à partir d'une recherche ciblée dans ses sources communautaires — avec anti-spoil et noms traduits dans ta langue.**
+**Un assistant IA qui répond à tes questions sur un jeu vidéo précis, à partir d'une recherche ciblée dans ses sources communautaires — avec les noms officiels du jeu en français.**
 
-Plutôt que de fouiller des wikis en anglais, des threads Reddit épars et des vidéos YouTube à rallonge, pose ta question directement. La V1 est disponible sur **Elden Ring** ; l'architecture est pensée pour accueillir d'autres jeux sans réécriture de code.
+Plutôt que de fouiller des wikis, des threads Reddit épars et des vidéos YouTube à rallonge, pose ta question directement. La V1 est disponible sur **Elden Ring** ; l'architecture est pensée pour accueillir d'autres jeux sans réécriture de code.
 
 ## Le problème
 
-Les assistants IA généralistes répondent vite, mais approfondissent peu leurs recherches et peuvent halluciner des détails précis. Sur un jeu joué en français, ça se corse encore : les noms des boss, objets et lieux issus des wikis anglophones ne correspondent pas toujours à la version française du jeu.
+Les assistants IA généralistes répondent vite, mais approfondissent peu leurs recherches et peuvent halluciner des détails précis. Sur un jeu joué en français, on veut aussi des réponses avec les noms officiels français des boss, objets et lieux — pas des termes anglais qui ne correspondent à rien dans ta version.
 
 ## Fonctionnalités
 
 - 🔍 **Recherche ciblée** dans les wikis et forums communautaires du jeu sélectionné
-- 🙈 **Anti-spoil personnalisable** — pose tes questions sans te faire spoiler la suite
-- 🌍 **Noms traduits automatiquement** (FR/EN) — fini les noms anglais qui ne correspondent à rien dans ta version française
+- 🇫🇷 **Noms officiels en français** — les réponses reprennent les noms officiels français du jeu (traduits depuis un glossaire officiel quand les sources fiables sont en anglais), fini les termes qui ne correspondent à rien dans ta version
 - 💬 **Historique de conversations**, par compte
 - 📱 **Mobile-first**, pensé pour être utilisé pendant que tu joues
 
@@ -24,7 +23,7 @@ Les assistants IA généralistes répondent vite, mais approfondissent peu leurs
 |---|---|---|
 | ![Connexion](./docs/apercu-connexion.png) | ![Configuration de la session](./docs/apercu-configuration.png) | ![Conversation](./docs/apercu-conversation.png) |
 
-On choisit son jeu, sa console et le niveau d'anti-spoil, puis on pose ses questions — les réponses citent leurs sources (Fextralife, Reddit, GameFAQs) plutôt que de sortir un avis générique.
+On choisit son jeu et sa console, puis on pose ses questions — les réponses citent leurs sources plutôt que de sortir un avis générique.
 
 *Maquettes — le développement est en cours.*
 
