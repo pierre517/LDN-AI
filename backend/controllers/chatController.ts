@@ -165,11 +165,13 @@ export async function handleChatMessage(request: NextRequest) {
   const matches = findGlossaryMatches(texteAnglais, glossaire);
   console.log("Traduction :", { longueurEN: texteAnglais.length, termesGlossaire: matches.length });
 
-  const traduction = streamTranslation({
+  // streamTranslation se rabat sur le texte anglais si la traduction échoue -> onSauvegarde reçoit
+  // le texte finalement affiché (français ou anglais), c'est lui qu'on enregistre en base.
+  const traduction = await streamTranslation({
     system: buildTranslationPrompt(matches),
     texteAnglais,
-    onFinish: async (texteFrancais) => {
-      await addMessage(conversation.id, "assistant", texteFrancais);
+    onSauvegarde: async (texte) => {
+      await addMessage(conversation.id, "assistant", texte);
     },
   });
 
