@@ -29,6 +29,10 @@ export function SignupForm() {
           8 caractères min., avec une majuscule, une minuscule, un chiffre et un caractère spécial.
         </p>
       </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="passwordConfirm">Confirmez le mot de passe</Label>
+        <Input id="passwordConfirm" name="passwordConfirm" type="password" required />
+      </div>
       <div className="flex items-start gap-2">
         <Checkbox id="cgu" name="cgu" required />
         <Label htmlFor="cgu" className="font-normal">
