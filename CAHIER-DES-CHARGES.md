@@ -4,7 +4,7 @@ Ce document sert de référence pour la documentation du projet et pour tout ass
 
 ## 1. Contexte et besoin
 
-Les soluces et informations précises sur un jeu vidéo sont dispersées entre wikis communautaires, forums et vidéos, ce qui rend la recherche d'une information précise longue et parfois infructueuse. Les assistants IA généralistes existants peuvent répondre à ce type de question, mais approfondissent peu leurs recherches (lecture de résumés plutôt que du contenu complet des pages) et peuvent halluciner des réponses plausibles mais fausses sur des détails précis. S'ajoute à ça un enjeu de langue : le jeu est souvent joué dans une version localisée (français ici), et une réponse qui reprend des noms anglais peut ne correspondre à rien dans ce que le joueur voit réellement à l'écran. La réponse doit donc utiliser les noms officiels français — ce que l'on obtient en ciblant directement des sources communautaires francophones pour chaque jeu.
+Les soluces et informations précises sur un jeu vidéo sont dispersées entre wikis communautaires, forums et vidéos, ce qui rend la recherche d'une information précise longue et parfois infructueuse. Les assistants IA généralistes existants peuvent répondre à ce type de question, mais approfondissent peu leurs recherches (lecture de résumés plutôt que du contenu complet des pages) et peuvent halluciner des réponses plausibles mais fausses sur des détails précis. S'ajoute à ça un enjeu de langue : le jeu est souvent joué dans une version localisée (français ici), et une réponse qui reprend des noms anglais peut ne correspondre à rien dans ce que le joueur voit réellement à l'écran. La réponse doit donc utiliser les noms officiels français. Selon le jeu, on obtient ces noms soit en ciblant directement des sources communautaires francophones, soit — quand les sources les plus fiables sont anglophones — en traduisant la réponse à l'aide d'un glossaire officiel des noms du jeu (voir section 10.4).
 
 ## 2. Objectif
 
@@ -153,7 +153,7 @@ Séquence :
 2. Vérification en amont : le prompt système vérifie que la question porte sur le jeu sélectionné ; si elle est hors sujet, le modèle redirige poliment sans chercher (voir section 13, recadrage)
 3. Pour une question sur le jeu, le modèle formule la requête de recherche optimale et la demande (tool calling de l'AI SDK)
 4. Le backend exécute réellement la recherche demandée, restreinte aux sources du jeu actif
-5. Le modèle rédige la réponse finale, en français, avec les noms officiels du jeu tels qu'ils apparaissent dans les sources francophones
+5. Le modèle rédige la réponse finale : directement en français pour les jeux à sources francophones, ou en anglais puis traduite en français via le glossaire officiel du jeu pour les jeux à sources anglophones (voir section 10.4)
 6. La réponse est streamée à l'utilisateur
 
 ### 10.2 Trois mémoires distinctes
@@ -168,6 +168,16 @@ Séquence :
 
 Pour économiser le quota Tavily (partagé entre tous les utilisateurs), les résultats de recherche bruts sont mis en cache dans Supabase (table `cache_recherches`), indexés par jeu + question normalisée, avec une expiration de 30 jours. On cache les résultats de recherche, jamais la réponse finale du modèle, qui reste propre à chaque conversation.
 
+### 10.4 Noms officiels via glossaire (sources anglophones)
+
+Pour certains jeux, les sources communautaires les plus fiables factuellement sont anglophones (la communauté francophone peut véhiculer des erreurs héritées d'anciennes versions). Pour ces jeux, un fichier de glossaire officiel (`config/glossaires/<jeu>.json` : paires nom anglais → nom français extraites de la version localisée du jeu) est référencé par le champ `glossaire` de `games.yaml`.
+
+Quand un jeu a un glossaire, le moteur fonctionne en **deux étapes** :
+1. **Réponse anglaise** — recherche dans les sources anglaises et rédaction de la réponse en anglais (gpt-oss-120b).
+2. **Traduction française** — la réponse anglaise est traduite en français par un second modèle (gpt-oss-20b, quota Groq séparé), en imposant les noms officiels français du glossaire pour les noms repérés dans la réponse. Un nom absent du glossaire (ex. contenu très récent) est laissé en anglais plutôt qu'inventé.
+
+Si la traduction échoue (ex. quota atteint), on affiche la réponse anglaise plutôt que rien. Les jeux **sans** glossaire gardent le flux à une seule étape (réponse directement en français depuis des sources francophones). Le glossaire est un simple fichier statique, pas une table en base : ajouter un jeu traduit ne demande que le YAML + le fichier de glossaire, aucun code.
+
 ## 11. Gestion multi-jeux
 
 V1 : un seul jeu (Elden Ring). Toute la configuration vit dans un seul fichier — décision confirmée : **pas de table `jeux` en base**, un identifiant unique (slug) suffit :
@@ -178,7 +188,8 @@ games:
     rawg_id: 326243
     nom: "Elden Ring"
     plateformes: [PS5, PS4, Xbox Series, Xbox One, PC]
-    sources: [fextralife.com/eldenring, reddit.com/r/Eldenring, gamefaqs.gamespot.com/...]
+    sources: [eldenring.wiki.fextralife.com, reddit.com/r/Eldenring]
+    glossaire: elden-ring.json   # optionnel : active la traduction EN->FR via le glossaire officiel
     statut: actif
 ```
 
@@ -191,7 +202,7 @@ Ce fichier n'est pas réservé à l'IA : c'est une configuration partagée, lue 
 | Lecteur | Champs utilisés | Usage |
 |---|---|---|
 | `features/game-selector/` | `id`, `nom`, `rawg_id`, `plateformes` | Sélecteur jeu/console dans le formulaire, appel à l'API RAWG pour la jaquette |
-| `features/chat/` | `id`, `nom`, `sources` | Construction du prompt système, restriction de la recherche Tavily |
+| `features/chat/` | `id`, `nom`, `sources`, `glossaire` | Construction du prompt système, restriction de la recherche Tavily, traduction des noms (si glossaire) |
 
 Aucune des deux features ne "possède" ce fichier : il vit dans un dossier neutre à la racine (`config/games.yaml`), importé indépendamment par la couche `infrastructure/` de chacune.
 
@@ -201,7 +212,7 @@ Aucune des deux features ne "possède" ce fichier : il vit dans un dossier neutr
 
 RAWG fournit les métadonnées du jeu (nom, plateformes, jaquette) pour l'autocomplete ; il ne connaît pas les sources communautaires, qui restent maintenues manuellement et reliées par `rawg_id`.
 
-Les sources configurées par jeu (`sources`) doivent être **francophones** : c'est ce qui garantit que les réponses reprennent les noms officiels français du jeu, sans étape de traduction supplémentaire.
+Les sources configurées par jeu (`sources`) sont **soit francophones** (les réponses reprennent alors directement les noms officiels français, sans traduction), **soit anglophones** si le jeu dispose d'un champ `glossaire` : la réponse est alors rédigée en anglais puis traduite en français en imposant les noms du glossaire (voir section 10.4).
 
 ## 12. Base de données (Supabase)
 
