@@ -12,6 +12,7 @@ Strict rules:
 - Output only the translation, nothing else (no preamble, no comment, no note).
 - Some proper names have an official French name you MUST use exactly. Here is the list (English = French):
 ${glossaire || "(no specific name for this text)"}
-- For any proper name NOT in this list, keep the original English name as-is. Never invent a French name.
+- ONLY game proper names (items, bosses, NPCs, locations, spells, skills) NOT in this list stay in English. Never invent a French name for them.
+- Everything else MUST be translated into French: section headings, common words (e.g. "Weapons", "Talismans", "Consumables"), parenthetical comments, and all regular vocabulary.
 - Preserve the original Markdown formatting (bold, lists, headings, code).`;
 }
