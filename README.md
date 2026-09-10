@@ -2,9 +2,9 @@
 
 **Pour plus de détails, consultez le fichier "cahier des charges.md à la racine du repo**
 
-**Un assistant IA qui répond à tes questions sur un jeu vidéo précis, à partir d'une recherche ciblée dans ses sources communautaires francophones — avec les noms officiels du jeu en français.**
+**Un assistant IA qui répond à tes questions sur un jeu vidéo précis, à partir d'une recherche ciblée dans ses sources communautaires — avec les noms officiels du jeu en français.**
 
-Plutôt que de fouiller des wikis en anglais, des threads Reddit épars et des vidéos YouTube à rallonge, pose ta question directement. La V1 est disponible sur **Elden Ring** ; l'architecture est pensée pour accueillir d'autres jeux sans réécriture de code.
+Plutôt que de fouiller des wikis, des threads Reddit épars et des vidéos YouTube à rallonge, pose ta question directement. La V1 est disponible sur **Elden Ring** ; l'architecture est pensée pour accueillir d'autres jeux sans réécriture de code.
 
 ## Le problème
 
@@ -13,7 +13,7 @@ Les assistants IA généralistes répondent vite, mais approfondissent peu leurs
 ## Fonctionnalités
 
 - 🔍 **Recherche ciblée** dans les wikis et forums communautaires du jeu sélectionné
-- �🇷 **Noms officiels en français** — la recherche cible des sources francophones, donc fini les noms anglais qui ne correspondent à rien dans ta version
+- 🇫🇷 **Noms officiels en français** — les réponses reprennent les noms officiels français du jeu (traduits depuis un glossaire officiel quand les sources fiables sont en anglais), fini les termes qui ne correspondent à rien dans ta version
 - 💬 **Historique de conversations**, par compte
 - 📱 **Mobile-first**, pensé pour être utilisé pendant que tu joues
 

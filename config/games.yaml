@@ -6,8 +6,11 @@ games:
     # Domaine + préfixe de chemin supportés par Tavily includeDomains : permet de cibler
     # la section française/du jeu d'un site, pas seulement le domaine entier
     sources:
-      - "fr.bandainamcoent.eu/elden-ring"
-      - "jeuxvideo.com/wikis-soluce-astuces"
+      - "reddit.com/r/Eldenring"
+      - "eldenring.wiki.fextralife.com"
+    # Fichier de config/glossaires/ : paires EN->FR officielles extraites du jeu.
+    # Sa présence activera le pipeline "sources EN + traduction" (jeu sans glossaire = flux actuel)
+    glossaire: "elden-ring.json"
     statut: actif
 
   - id: skyrim

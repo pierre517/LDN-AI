@@ -3,8 +3,8 @@ import { tavily } from "@tavily/core";
 const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
 const RETRY_DELAY_MS = 500;
 // Résultats volontairement compacts : ils sont réinjectés dans le contexte Groq (plafond 8K tokens/minute)
-const MAX_RESULTATS = 3;
-const MAX_CONTENU_CHARS = 800;
+const MAX_RESULTATS = 5;
+const MAX_CONTENU_CHARS = 1200;
 
 export type TavilySearchResult = {
   titre: string;

@@ -10,6 +10,7 @@ type GameConfigEntry = {
   nom: string;
   plateformes: string[];
   sources: string[];
+  glossaire?: string;
   statut: string;
 };
 
@@ -25,6 +26,7 @@ export function getGames(): Game[] {
     rawgId: game.rawg_id, // conversion snake_case (YAML) -> camelCase (notre domaine)
     plateformes: game.plateformes,
     sources: game.sources,
+    glossaire: game.glossaire,
     statut: game.statut as "actif" | "inactif",
   }));
 }

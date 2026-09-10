@@ -3,25 +3,27 @@ import { z } from "zod";
 import { searchGameSources } from "@/features/chat/infrastructure/tavilyClient";
 import { getCachedResults, saveCachedResults } from "@/features/chat/infrastructure/cacheClient";
 
-type Params = { jeuId: string; jeuNom: string; sources: string[]; question: string };
+type Params = { jeuId: string; jeuNom: string; sources: string[]; question: string; langue: "fr" | "en" };
 
 // Fabrique l'outil pour une conversation donnée : jeuId/sources/question dépendent de la requête
 // en cours, on ne peut donc pas les coder en dur dans un objet tool() statique.
-export function createSearchGameWikiTool({ jeuId, jeuNom, sources, question }: Params) {
+export function createSearchGameWikiTool({ jeuId, jeuNom, sources, question, langue }: Params) {
   // Une recherche interroge déjà toutes les sources d'un coup : une seule suffit par question.
   // Sans ce verrou, le modèle peut relancer l'outil en boucle et faire exploser les tokens Groq.
   let rechercheEffectuee = false;
   let nbResultats = 0;
 
+  // Les sources d'un jeu à glossaire sont anglaises -> la requête doit l'être aussi pour bien matcher.
+  const consigneQuery =
+    langue === "en"
+      ? "The optimized search query, rephrased from the user's question. Written in English (the sources are English-language), including the game name."
+      : "La requête de recherche optimisée, reformulée à partir de la question de l'utilisateur. Rédigée en français (les sources sont francophones), en incluant le nom du jeu.";
+
   return tool({
     description:
       "Recherche des informations sur le jeu dans les sources communautaires (wikis, forums) pour répondre à la question de l'utilisateur.",
     inputSchema: z.object({
-      query: z
-        .string()
-        .describe(
-          "La requête de recherche optimisée, reformulée à partir de la question de l'utilisateur. Rédigée en français (les sources sont francophones), en incluant le nom du jeu.",
-        ),
+      query: z.string().describe(consigneQuery),
     }),
     // C'est toujours notre code qui exécute la recherche, jamais le modèle lui-même (section 10.1 du cahier des charges)
     execute: async ({ query }) => {

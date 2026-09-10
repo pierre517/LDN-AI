@@ -1,43 +1,79 @@
 import { groq } from "@ai-sdk/groq";
-import type { AsyncIterableStream, TextStreamPart, ToolSet } from "ai";
+import { streamText } from "ai";
+import type { TextStreamPart, ToolSet } from "ai";
 
-// gpt-oss-20b sert de modèle de secours : mêmes capacités (tools compris) que gpt-oss-120b,
-// mais avec un quota Groq séparé — utile si gpt-oss-120b est à quota au moment de la requête.
-const PRIMARY_MODEL = groq("openai/gpt-oss-120b");
-const FALLBACK_MODEL = groq("openai/gpt-oss-20b");
+// Modèle principal pour générer la réponse (étape 1). Plus de fallback : si Groq refuse la requête
+// (ex. quota), l'erreur remonte au controller qui renvoie un message technique générique.
+export const ANSWER_MODEL = groq("openai/gpt-oss-120b");
 
-// Le controller construit lui-même l'appel streamText (system, messages, tools...),
-// on lui fournit juste le modèle à utiliser pour chaque tentative.
-type BuildCall<TOOLS extends ToolSet> = (
-  model: typeof PRIMARY_MODEL,
-) => { stream: AsyncIterableStream<TextStreamPart<TOOLS>> };
+// Étape 2 du pipeline glossaire : la traduction tourne sur gpt-oss-20b, dont le quota est
+// séparé de gpt-oss-120b (étape 1) — les deux étapes ne se disputent donc pas le même bucket.
+const TRANSLATION_MODEL = groq("openai/gpt-oss-20b");
 
-// Tente l'appel avec gpt-oss-120b, et bascule automatiquement sur gpt-oss-20b si Groq
-// refuse la requête (ex : quota dépassé) avant d'avoir streamé la moindre réponse.
-export async function streamChatWithFallback<TOOLS extends ToolSet>(buildCall: BuildCall<TOOLS>) {
-  const primary = buildCall(PRIMARY_MODEL);
-  const iterator = primary.stream[Symbol.asyncIterator]();
+// Traduit un texte anglais en français (étape 2) et renvoie le flux streamé, prêt pour toUIMessageStream.
+// Si gpt-oss-20b refuse la requête avant le premier token (ex. quota), on se rabat sur la réponse
+// anglaise déjà obtenue plutôt que de ne rien montrer. onSauvegarde reçoit le texte finalement
+// affiché (français si la traduction réussit, anglais sinon) pour l'enregistrer en base.
+export async function streamTranslation({
+  system,
+  texteAnglais,
+  onSauvegarde,
+}: {
+  system: string;
+  texteAnglais: string;
+    onSauvegarde: (texte: string) => void | Promise<void>;
+}) {
+  const traduction = streamText({
+    model: TRANSLATION_MODEL,
+    system,
+    prompt: texteAnglais,
+    onFinish: ({ text }) => onSauvegarde(text),
+  });
 
+  const iterateur = traduction.stream[Symbol.asyncIterator]();
   try {
-    // Seul moyen de savoir si Groq a accepté la requête : lire le tout premier morceau de la réponse.
-    const firstChunk = await iterator.next();
-    return rebuildStream(firstChunk, iterator);
+    // On lit le tout premier morceau : seul moyen de savoir si Groq a accepté la requête de traduction
+    const premier = await iterateur.next();
+    return rebuildStream(premier, iterateur);
   } catch (error) {
-    console.error("Groq : gpt-oss-120b indisponible (quota atteint ?), bascule sur gpt-oss-20b.", error);
-    return buildCall(FALLBACK_MODEL).stream;
+    console.error("Traduction indisponible (quota gpt-oss-20b ?), repli sur la réponse anglaise.", error);
+    await onSauvegarde(texteAnglais);
+    return texteVersFlux(texteAnglais);
   }
 }
 
 // Remet en tête du flux le premier morceau qu'on a dû lire pour vérifier qu'il n'y avait pas d'erreur
-function rebuildStream<T>(firstChunk: IteratorResult<T>, rest: AsyncIterator<T>) {
+function rebuildStream<T>(premier: IteratorResult<T>, reste: AsyncIterator<T>) {
   return new ReadableStream<T>({
     async start(controller) {
-      if (!firstChunk.done) controller.enqueue(firstChunk.value);
+      if (!premier.done) controller.enqueue(premier.value);
       while (true) {
-        const next = await rest.next();
-        if (next.done) break;
-        controller.enqueue(next.value);
+        const suivant = await reste.next();
+        if (suivant.done) break;
+        controller.enqueue(suivant.value);
       }
+      controller.close();
+    },
+  });
+}
+
+// Fabrique un flux minimal à partir d'une chaîne (repli anglais) : on imite les morceaux qu'émettrait
+// streamText (start, texte, finish) pour que toUIMessageStream les traite comme une réponse normale.
+function texteVersFlux(texte: string): ReadableStream<TextStreamPart<ToolSet>> {
+  const id = "fallback-en";
+  // Cast nécessaire : le morceau "finish" attend un objet usage complet qu'on n'a pas ici et dont
+  // toUIMessageStream ne se sert pas pour l'affichage — on fournit juste le minimum utile.
+  const morceaux = [
+    { type: "start" },
+    { type: "text-start", id },
+    { type: "text-delta", id, text: texte },
+    { type: "text-end", id },
+    { type: "finish", finishReason: "stop", rawFinishReason: "stop", totalUsage: {} },
+  ] as unknown as TextStreamPart<ToolSet>[];
+
+  return new ReadableStream<TextStreamPart<ToolSet>>({
+    start(controller) {
+      for (const morceau of morceaux) controller.enqueue(morceau);
       controller.close();
     },
   });
