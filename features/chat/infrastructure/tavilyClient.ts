@@ -31,13 +31,25 @@ export async function searchGameSources(query: string, sources: string[]): Promi
 async function callTavily(query: string, sources: string[]): Promise<TavilySearchResult[]> {
   const response = await client.search(query, {
     includeDomains: sources,
+    // "advanced" coûte 2 crédits au lieu de 1, mais "basic" rate les bonnes pages sur les gros wikis
+    searchDepth: "advanced",
     maxResults: MAX_RESULTATS,
   });
 
-  // On ne garde que ce dont le modèle a besoin, pas toute la réponse brute de Tavily
-  return response.results.map((result) => ({
-    titre: result.title,
-    url: result.url,
-    contenu: result.content.slice(0, MAX_CONTENU_CHARS),
-  }));
+  // Tavily peut glisser des pages hors liste (constaté en test) et son mode strict refuse les chemins
+  // (ex. "fandom.com/fr") -> on applique nous-mêmes la whitelist sur les URL renvoyées
+  return response.results
+    .filter((result) => estDansLesSources(result.url, sources))
+    // On ne garde que ce dont le modèle a besoin, pas toute la réponse brute de Tavily
+    .map((result) => ({
+      titre: result.title,
+      url: result.url,
+      contenu: result.content.slice(0, MAX_CONTENU_CHARS),
+    }));
+}
+
+// Une URL est acceptée si, une fois débarrassée de "https://" et "www.", elle commence par l'une des sources
+function estDansLesSources(url: string, sources: string[]): boolean {
+  const urlNormalisee = url.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "");
+  return sources.some((source) => urlNormalisee.startsWith(source.toLowerCase()));
 }

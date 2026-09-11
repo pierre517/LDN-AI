@@ -5,6 +5,26 @@ import { getCachedResults, saveCachedResults } from "@/features/chat/infrastruct
 
 type Params = { jeuId: string; jeuNom: string; sources: string[]; question: string; langue: "fr" | "en" };
 
+// Mots trop courts pour identifier un jeu à eux seuls ("The", "V", "Ring"...)
+const LONGUEUR_MIN_MOT = 5;
+
+// Le modèle écrit souvent le nom court ("Skyrim") plutôt que le nom complet ("The Elder Scrolls V: Skyrim") :
+// on considère le jeu présent dès qu'un mot significatif de son nom apparaît, pour ne pas le préfixer en double.
+function contientNomDuJeu(query: string, jeuNom: string): boolean {
+  const motsSignificatifs = jeuNom
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((mot) => mot.length >= LONGUEUR_MIN_MOT);
+
+  // Aucun mot assez long (nom de jeu très court) -> on retombe sur la comparaison du nom complet
+  if (motsSignificatifs.length === 0) {
+    return query.toLowerCase().includes(jeuNom.toLowerCase());
+  }
+
+  const motsQuery = query.toLowerCase().split(/[^\p{L}\p{N}]+/u);
+  return motsSignificatifs.some((mot) => motsQuery.includes(mot));
+}
+
 // Fabrique l'outil pour une conversation donnée : jeuId/sources/question dépendent de la requête
 // en cours, on ne peut donc pas les coder en dur dans un objet tool() statique.
 export function createSearchGameWikiTool({ jeuId, jeuNom, sources, question, langue }: Params) {
@@ -14,10 +34,11 @@ export function createSearchGameWikiTool({ jeuId, jeuNom, sources, question, lan
   let nbResultats = 0;
 
   // Les sources d'un jeu à glossaire sont anglaises -> la requête doit l'être aussi pour bien matcher.
+  // Des mots-clés façon titre de page de wiki ressortent bien mieux qu'une phrase complète.
   const consigneQuery =
     langue === "en"
-      ? "The optimized search query, rephrased from the user's question. Written in English (the sources are English-language), including the game name."
-      : "La requête de recherche optimisée, reformulée à partir de la question de l'utilisateur. Rédigée en français (les sources sont francophones), en incluant le nom du jeu.";
+      ? "Search keywords derived from the user's question, like a wiki page title (e.g. 'Skyrim races starting skills'), not a full sentence. Written in English (the sources are English-language), including the game name."
+      : "Mots-clés de recherche tirés de la question de l'utilisateur, façon titre de page de wiki (ex. « Skyrim races compétences de départ »), pas une phrase complète. Rédigés en français (les sources sont francophones), en incluant le nom du jeu.";
 
   return tool({
     description:
@@ -40,7 +61,7 @@ export function createSearchGameWikiTool({ jeuId, jeuNom, sources, question, lan
 
       // Garde-fou : certaines sources couvrent plusieurs jeux (ex. jeuxvideo.com), le nom du jeu
       // dans la requête est notre seule protection contre les résultats d'un autre jeu
-      const queryAvecJeu = query.toLowerCase().includes(jeuNom.toLowerCase()) ? query : `${jeuNom} ${query}`;
+      const queryAvecJeu = contientNomDuJeu(query, jeuNom) ? query : `${jeuNom} ${query}`;
 
       // Clé de cache = question d'origine de l'utilisateur (stable d'une fois sur l'autre),
       // pas la reformulation du modèle (qui change à chaque appel -> cache quasi jamais réutilisé)
