@@ -17,7 +17,10 @@ games:
     rawg_id: 5679
     nom: "The Elder Scrolls V: Skyrim"
     plateformes: [PS5, PS4, Xbox Series, Xbox One, PC, Switch]
+    # Sources anglaises (plus fiables que les wikis FR) : le préfixe "Skyrim:" d'UESP exclut les autres jeux de la série
     sources:
-      - "elderscrolls.fandom.com/fr"
-      - "monster-soluce.com/jeux/the-elder-scrolls-v-skyrim"
+      - "en.uesp.net/wiki/Skyrim:"
+      - "reddit.com/r/skyrim"
+    # Paires EN->FR extraites des fichiers de langue officiels (jeu de base + DLC)
+    glossaire: "skyrim.json"
     statut: actif
